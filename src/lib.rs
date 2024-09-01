@@ -281,7 +281,7 @@ pub mod marketplace {
 
 #[derive(Accounts)]
 pub struct CreateUser<'info> {
-    #[account(init, payer = user_signer, space = 8 +  std::mem::size_of<User>())]
+    #[account(init, payer = user_signer, space = 8 +  std::mem::size_of::<User>())]
     pub user: Account<'info, User>,
     #[account(mut)]
     pub user_signer: Signer<'info>,
@@ -300,7 +300,7 @@ pub struct UpdateUser<'info> {
 pub struct CreateStore<'info> {
     #[account(mut)]
     pub user: Account<'info, User>,
-    #[account(init, payer = user, space = 8 + std::mem::size_of<Store>())]
+    #[account(init, payer = user, space = 8 + std::mem::size_of::<Store>())]
     pub store: Account<'info, Store>,
     #[account(mut)]
     pub store_counter: Account<'info, Counter>,
@@ -311,7 +311,7 @@ pub struct CreateStore<'info> {
 pub struct CreateRequest<'info> {
     #[account(mut)]
     pub user: Account<'info, User>,
-    #[account(init, payer = user, space = 8 + std::mem::size_of<Request>())]
+    #[account(init, payer = user, space = 8 + std::mem::size_of::<Request>())]
     pub request: Account<'info, Request>,
     #[account(mut)]
     pub request_counter: Account<'info, Counter>,
@@ -324,7 +324,7 @@ pub struct CreateOffer<'info> {
     pub user: Account<'info, User>,
     #[account(mut)]
     pub request: Account<'info, Request>,
-    #[account(init, payer = user, space = 8 + std::mem::size_of<Offer>())]
+    #[account(init, payer = user, space = 8 + std::mem::size_of::<Offer>())]
     pub offer: Account<'info, Offer>,
     #[account(mut)]
     pub offer_counter: Account<'info, Counter>,

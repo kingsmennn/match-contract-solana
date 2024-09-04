@@ -170,7 +170,6 @@ pub mod marketplace {
         ctx: Context<CreateOffer>,
         price: i64,
         images: Vec<String>,
-        request_id: u64,
         store_name: String,
     ) -> Result<()> {
         let user = &mut ctx.accounts.user;
@@ -217,63 +216,63 @@ pub mod marketplace {
         Ok(())
     }
 
-    pub fn accept_offer(ctx: Context<AcceptOffer>, offer_id: u64) -> Result<()> {
-        let user = &mut ctx.accounts.user;
-        let offer = &mut ctx.accounts.offer;
-        let request = &mut ctx.accounts.request;
+    // pub fn accept_offer(ctx: Context<AcceptOffer>, offer_id: u64) -> Result<()> {
+    //     let user = &mut ctx.accounts.user;
+    //     let offer = &mut ctx.accounts.offer;
+    //     let request = &mut ctx.accounts.request;
 
-        if user.account_type != AccountType::Buyer {
-            return err!(MarketplaceError::OnlyBuyersAllowed);
-        }
+    //     if user.account_type != AccountType::Buyer {
+    //         return err!(MarketplaceError::OnlyBuyersAllowed);
+    //     }
 
-        if request.buyer_id != user.id {
-            return err!(MarketplaceError::UnauthorizedBuyer);
-        }
+    //     if request.buyer_id != user.id {
+    //         return err!(MarketplaceError::UnauthorizedBuyer);
+    //     }
 
-        if offer.is_accepted {
-            return err!(MarketplaceError::OfferAlreadyAccepted);
-        }
+    //     if offer.is_accepted {
+    //         return err!(MarketplaceError::OfferAlreadyAccepted);
+    //     }
 
-        if Clock::get().unwrap().unix_timestamp as u64 > request.updated_at + TIME_TO_LOCK
-            && request.lifecycle == RequestLifecycle::AcceptedByBuyer
-        {
-            return err!(MarketplaceError::RequestLocked);
-        }
+    //     if Clock::get().unwrap().unix_timestamp as u64 > request.updated_at + TIME_TO_LOCK
+    //         && request.lifecycle == RequestLifecycle::AcceptedByBuyer
+    //     {
+    //         return err!(MarketplaceError::RequestLocked);
+    //     }
 
-        for prev_offer_id in request.offer_ids.iter() {
-            let previous_offer = &mut ctx.accounts.offers[*prev_offer_id as usize];
-            previous_offer.is_accepted = false;
-            emit!(OfferAccepted {
-                offer_id: previous_offer.id,
-                buyer_address: *ctx.accounts.user.to_account_info().key,
-                is_accepted: false,
-            });
-        }
+    //     for prev_offer_id in request.offer_ids.iter() {
+    //         let previous_offer = &mut ctx.accounts.offers[*prev_offer_id as usize];
+    //         previous_offer.is_accepted = false;
+    //         emit!(OfferAccepted {
+    //             offer_id: previous_offer.id,
+    //             buyer_address: *ctx.accounts.user.to_account_info().key,
+    //             is_accepted: false,
+    //         });
+    //     }
 
-        offer.is_accepted = true;
-        offer.updated_at = Clock::get().unwrap().unix_timestamp as u64;
-        request.offer_ids.push(offer.id);
-        request.locked_seller_id = offer.seller_id;
-        request.sellers_price_quote = offer.price;
-        request.lifecycle = RequestLifecycle::AcceptedByBuyer;
-        request.updated_at = Clock::get().unwrap().unix_timestamp as u64;
+    //     offer.is_accepted = true;
+    //     offer.updated_at = Clock::get().unwrap().unix_timestamp as u64;
+    //     request.offer_ids.push(offer.id);
+    //     request.locked_seller_id = offer.seller_id;
+    //     request.sellers_price_quote = offer.price;
+    //     request.lifecycle = RequestLifecycle::AcceptedByBuyer;
+    //     request.updated_at = Clock::get().unwrap().unix_timestamp as u64;
 
-        emit!(RequestAccepted {
-            request_id: request.id,
-            offer_id: offer.id,
-            seller_id: offer.seller_id,
-            updated_at: request.updated_at,
-            sellers_price_quote: request.sellers_price_quote,
-        });
+    //     emit!(RequestAccepted {
+    //         request_id: request.id,
+    //         offer_id: offer.id,
+    //         seller_id: offer.seller_id,
+    //         updated_at: request.updated_at,
+    //         sellers_price_quote: request.sellers_price_quote,
+    //     });
 
-        emit!(OfferAccepted {
-            offer_id: offer.id,
-            buyer_address: *ctx.accounts.user.to_account_info().key,
-            is_accepted: true,
-        });
+    //     emit!(OfferAccepted {
+    //         offer_id: offer.id,
+    //         buyer_address: *ctx.accounts.user.to_account_info().key,
+    //         is_accepted: true,
+    //     });
 
-        Ok(())
-    }
+    //     Ok(())
+    // }
 }
 
 #[derive(Accounts)]

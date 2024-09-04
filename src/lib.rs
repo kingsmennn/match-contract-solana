@@ -274,10 +274,6 @@ pub mod marketplace {
 
         Ok(())
     }
-
-    // // Add other functions similarly...
-
-    // // Helper function to generate unique IDs (just a placeholder)
 }
 
 #[derive(Accounts)]
@@ -351,7 +347,6 @@ pub struct AcceptOffer<'info> {
     pub system_program: Program<'info, System>,
 }
 
-// Define your custom errors
 #[error_code]
 pub enum MarketplaceError {
     #[msg("User already exists.")]
@@ -370,5 +365,4 @@ pub enum MarketplaceError {
     OfferAlreadyAccepted,
     #[msg("Request locked.")]
     RequestLocked,
-    // Add other custom errors here...
 }

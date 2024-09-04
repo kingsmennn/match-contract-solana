@@ -348,8 +348,6 @@ pub struct AcceptOffer<'info> {
     pub offer: Box<Account<'info, Offer>>,
     #[account(mut)]
     pub request: Box<Account<'info, Request>>,
-    #[account(mut)]
-    pub offers: Program<'info, Offer>, // For iterating previous offers
     pub system_program: Program<'info, System>,
 }
 

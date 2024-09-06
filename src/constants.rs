@@ -1,6 +1,9 @@
 use anchor_lang::prelude::*;
 
 #[constant]
+pub const TIME_TO_LOCK: u64 = 900;
+
+#[constant]
 pub const USER_TAG: &[u8] = b"USER_STATE";
 
 #[constant]
@@ -10,22 +13,19 @@ pub const ADMIN_TAG: &[u8] = b"ADMIN_TAG";
 pub const STORE_TAG: &[u8] = b"STORE_STATE";
 
 #[constant]
-pub const TIME_TO_LOCK: u64 = 900;
-
-#[constant]
 pub const REQUEST_TAG: &[u8] = b"REQUEST_STATE";
 
 #[constant]
 pub const OFFER_TAG: &[u8] = b"OFFER_STATE";
 
 #[constant]
-pub const USER_COUNTER : &[u8] = b"USER_COUNTER";
+pub const USER_COUNTER: &[u8] = b"USER_COUNTER";
 
 #[constant]
-pub const STORE_COUNTER : &[u8] = b"STORE_COUNTER";
+pub const STORE_COUNTER: &[u8] = b"STORE_COUNTER";
 
 #[constant]
-pub const REQUEST_COUNTER : &[u8] = b"REQUEST_COUNTER";
+pub const REQUEST_COUNTER: &[u8] = b"REQUEST_COUNTER";
 
 #[constant]
-pub const OFFER_COUNTER : &[u8] = b"OFFER_COUNTER";
+pub const OFFER_COUNTER: &[u8] = b"OFFER_COUNTER";

@@ -38,6 +38,7 @@ pub struct Request {
     pub created_at: u64,
     pub updated_at: u64,
     pub lifecycle: RequestLifecycle,
+    pub authority: Pubkey,
 }
 
 #[account]

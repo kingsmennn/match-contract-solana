@@ -64,6 +64,7 @@ pub mod marketplace {
         user.account_type = account_type;
         user.created_at = Clock::get().unwrap().unix_timestamp;
         user.updated_at = Clock::get().unwrap().unix_timestamp;
+        user.authority = ctx.accounts.authority.key();
 
         msg!("UserCreated: {:?}", user);
 
@@ -92,6 +93,7 @@ pub mod marketplace {
         };
         user.updated_at = Clock::get().unwrap().unix_timestamp;
         user.account_type = account_type;
+        user.authority = ctx.accounts.authority.key();
 
         msg!("UserUpdated: {:?}", user);
 

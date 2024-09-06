@@ -10,7 +10,6 @@ pub struct User {
     pub updated_at: i64,
     pub account_type: AccountType,
     pub authority: Pubkey,
-    pub store_id: u64,
 }
 
 #[account]

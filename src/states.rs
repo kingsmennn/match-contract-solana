@@ -9,6 +9,8 @@ pub struct User {
     pub created_at: i64,
     pub updated_at: i64,
     pub account_type: AccountType,
+    pub authority: Pubkey,
+    pub store_id: u64,
 }
 
 #[account]
@@ -18,6 +20,7 @@ pub struct Store {
     pub description: String,
     pub phone: String,
     pub location: Location,
+    pub authority: Pubkey,
 }
 
 #[account]
@@ -48,6 +51,7 @@ pub struct Offer {
     pub is_accepted: bool,
     pub created_at: u64,
     pub updated_at: u64,
+    pub authority: Pubkey,
 }
 
 #[account]

@@ -29,7 +29,14 @@ pub mod marketplace {
             return err!(MarketplaceError::InvalidAccountType);
         }
 
+        if counter.current == 0 {
+            counter.current = 1;
+        }
+
         user.id = counter.current;
+
+        counter.current += 1;
+
         user.username = username;
         user.phone = phone;
         user.location = Location {
@@ -216,72 +223,77 @@ pub mod marketplace {
         Ok(())
     }
 
-    // pub fn accept_offer(ctx: Context<AcceptOffer>, offer_id: u64) -> Result<()> {
-    //     let user = &mut ctx.accounts.user;
-    //     let offer = &mut ctx.accounts.offer;
-    //     let request = &mut ctx.accounts.request;
+    pub fn accept_offer(ctx: Context<AcceptOffer>, offer_id: u64) -> Result<()> {
+        let user = &mut ctx.accounts.user;
+        let offer = &mut ctx.accounts.offer;
+        let request = &mut ctx.accounts.request;
 
-    //     if user.account_type != AccountType::Buyer {
-    //         return err!(MarketplaceError::OnlyBuyersAllowed);
-    //     }
+        if user.account_type != AccountType::Buyer {
+            return err!(MarketplaceError::OnlyBuyersAllowed);
+        }
 
-    //     if request.buyer_id != user.id {
-    //         return err!(MarketplaceError::UnauthorizedBuyer);
-    //     }
+        if request.buyer_id != user.id {
+            return err!(MarketplaceError::UnauthorizedBuyer);
+        }
 
-    //     if offer.is_accepted {
-    //         return err!(MarketplaceError::OfferAlreadyAccepted);
-    //     }
+        if offer.is_accepted {
+            return err!(MarketplaceError::OfferAlreadyAccepted);
+        }
 
-    //     if Clock::get().unwrap().unix_timestamp as u64 > request.updated_at + TIME_TO_LOCK
-    //         && request.lifecycle == RequestLifecycle::AcceptedByBuyer
-    //     {
-    //         return err!(MarketplaceError::RequestLocked);
-    //     }
+        if Clock::get().unwrap().unix_timestamp as u64 > request.updated_at + TIME_TO_LOCK
+            && request.lifecycle == RequestLifecycle::AcceptedByBuyer
+        {
+            return err!(MarketplaceError::RequestLocked);
+        }
 
-    //     for prev_offer_id in request.offer_ids.iter() {
-    //         let previous_offer = &mut ctx.accounts.offers[*prev_offer_id as usize];
-    //         previous_offer.is_accepted = false;
-    //         emit!(OfferAccepted {
-    //             offer_id: previous_offer.id,
-    //             buyer_address: *ctx.accounts.user.to_account_info().key,
-    //             is_accepted: false,
-    //         });
-    //     }
+        for prev_offer_id in request.offer_ids.iter() {
+            // let previous_offer = &mut ctx.accounts.offers[*prev_offer_id as usize];
+            // previous_offer.is_accepted = false;
+            // emit!(OfferAccepted {
+            //     offer_id: previous_offer.id,
+            //     buyer_address: *ctx.accounts.user.to_account_info().key,
+            //     is_accepted: false,
+            // });
+        }
 
-    //     offer.is_accepted = true;
-    //     offer.updated_at = Clock::get().unwrap().unix_timestamp as u64;
-    //     request.offer_ids.push(offer.id);
-    //     request.locked_seller_id = offer.seller_id;
-    //     request.sellers_price_quote = offer.price;
-    //     request.lifecycle = RequestLifecycle::AcceptedByBuyer;
-    //     request.updated_at = Clock::get().unwrap().unix_timestamp as u64;
+        offer.is_accepted = true;
+        offer.updated_at = Clock::get().unwrap().unix_timestamp as u64;
+        request.offer_ids.push(offer.id);
+        request.locked_seller_id = offer.seller_id;
+        request.sellers_price_quote = offer.price;
+        request.lifecycle = RequestLifecycle::AcceptedByBuyer;
+        request.updated_at = Clock::get().unwrap().unix_timestamp as u64;
 
-    //     emit!(RequestAccepted {
-    //         request_id: request.id,
-    //         offer_id: offer.id,
-    //         seller_id: offer.seller_id,
-    //         updated_at: request.updated_at,
-    //         sellers_price_quote: request.sellers_price_quote,
-    //     });
+        emit!(RequestAccepted {
+            request_id: request.id,
+            offer_id: offer.id,
+            seller_id: offer.seller_id,
+            updated_at: request.updated_at,
+            sellers_price_quote: request.sellers_price_quote,
+        });
 
-    //     emit!(OfferAccepted {
-    //         offer_id: offer.id,
-    //         buyer_address: *ctx.accounts.user.to_account_info().key,
-    //         is_accepted: true,
-    //     });
+        emit!(OfferAccepted {
+            offer_id: offer.id,
+            buyer_address: *ctx.accounts.user.to_account_info().key,
+            is_accepted: true,
+        });
 
-    //     Ok(())
-    // }
+        Ok(())
+    }
 }
 
 #[derive(Accounts)]
 #[instruction()]
 pub struct CreateUser<'info> {
-    #[account(init, payer = user_signer, space = 8 +  std::mem::size_of::<User>())]
+    #[account(
+        init,
+        seeds = [USER_TAG,authority.key.as_ref()],
+        bump,
+        payer = authority,
+        space = 8 + std::mem::size_of::<User>())]
     pub user: Box<Account<'info, User>>,
     #[account(mut)]
-    pub user_signer: Signer<'info>,
+    pub authority: Signer<'info>,
     #[account(mut)]
     pub user_counter: Box<Account<'info, Counter>>,
     pub system_program: Program<'info, System>,
@@ -290,19 +302,33 @@ pub struct CreateUser<'info> {
 #[derive(Accounts)]
 #[instruction()]
 pub struct UpdateUser<'info> {
-    #[account(mut)]
+    #[account(
+        mut,
+        seeds = [USER_TAG,authority.key().as_ref()],
+        bump,
+        has_one = authority
+    )]
     pub user: Box<Account<'info, User>>,
     #[account(mut)]
-    pub signer: Signer<'info>,
+    pub authority: Signer<'info>,
 }
 
 #[derive(Accounts)]
 #[instruction()]
 pub struct CreateStore<'info> {
-    #[account(mut)]
+    #[account(
+        mut,
+        seeds = [USER_TAG,authority.key().as_ref()],
+        bump,
+        has_one = authority
+    )]
     pub user: Box<Account<'info, User>>,
-    #[account(init, payer = user, space = 8 + std::mem::size_of::<Store>())]
+    #[account(init, payer = user, space = 8 + std::mem::size_of::<Store>(),        
+    seeds = [STORE_TAG, authority.key().as_ref(),&store_counter.current.to_le_bytes()],
+    bump,)]
     pub store: Box<Account<'info, Store>>,
+    #[account(mut)]
+    pub authority: Signer<'info>,
     #[account(mut)]
     pub store_counter: Box<Account<'info, Counter>>,
     pub system_program: Program<'info, System>,
@@ -311,24 +337,42 @@ pub struct CreateStore<'info> {
 #[derive(Accounts)]
 #[instruction()]
 pub struct CreateRequest<'info> {
-    #[account(mut)]
+    #[account(
+        mut,
+        seeds = [USER_TAG,authority.key().as_ref()],
+        bump,
+        has_one = authority
+    )]
     pub user: Box<Account<'info, User>>,
-    #[account(init, payer = user, space = 8 + std::mem::size_of::<Request>())]
+    #[account(init, payer = user, space = 8 + std::mem::size_of::<Request>(),        
+    seeds = [REQUEST_TAG, authority.key().as_ref(),&request_counter.current.to_le_bytes()],
+    bump,)]
     pub request: Box<Account<'info, Request>>,
     #[account(mut)]
     pub request_counter: Box<Account<'info, Counter>>,
+    #[account(mut)]
+    pub authority: Signer<'info>,
     pub system_program: Program<'info, System>,
 }
 
 #[derive(Accounts)]
 #[instruction()]
 pub struct CreateOffer<'info> {
-    #[account(mut)]
+    #[account(
+        mut,
+        seeds = [USER_TAG,authority.key().as_ref()],
+        bump,
+        has_one = authority
+    )]
     pub user: Box<Account<'info, User>>,
     #[account(mut)]
     pub request: Box<Account<'info, Request>>,
-    #[account(init, payer = user, space = 8 + std::mem::size_of::<Offer>())]
+    #[account(init, payer = user, space = 8 + std::mem::size_of::<Offer>(),        
+    seeds = [OFFER_TAG, authority.key().as_ref(),&offer_counter.current.to_le_bytes()],
+    bump,)]
     pub offer: Box<Account<'info, Offer>>,
+    #[account(mut)]
+    pub authority: Signer<'info>,
     #[account(mut)]
     pub offer_counter: Box<Account<'info, Counter>>,
     pub system_program: Program<'info, System>,
@@ -337,8 +381,15 @@ pub struct CreateOffer<'info> {
 #[derive(Accounts)]
 #[instruction()]
 pub struct AcceptOffer<'info> {
-    #[account(mut)]
+    #[account(
+        mut,
+        seeds = [USER_TAG,authority.key().as_ref()],
+        bump,
+        has_one = authority
+    )]
     pub user: Box<Account<'info, User>>,
+    #[account(mut)]
+    pub authority: Signer<'info>,
     #[account(mut)]
     pub offer: Box<Account<'info, Offer>>,
     #[account(mut)]

@@ -377,7 +377,7 @@ pub struct CreateRequest<'info> {
         has_one = authority
     )]
     pub user: Box<Account<'info, User>>,
-    #[account(init, payer = authority ,space = 8 + size_of::<Request>(),        
+    #[account(init, payer = authority ,space = 8 + size_of::<Request>() + 1024,        
     seeds = [REQUEST_TAG, authority.key().as_ref(),&request_counter.current.to_le_bytes()],
     bump,)]
     pub request: Box<Account<'info, Request>>,
@@ -404,7 +404,7 @@ pub struct CreateOffer<'info> {
     pub user: Box<Account<'info, User>>,
     #[account(mut)]
     pub request: Box<Account<'info, Request>>,
-    #[account(init, payer = authority ,space = 8 + size_of::<Offer>(),        
+    #[account(init, payer = authority ,space = 8 + size_of::<Offer>() + 1024,     
     seeds = [OFFER_TAG, authority.key().as_ref(),&offer_counter.current.to_le_bytes()],
     bump,)]
     pub offer: Box<Account<'info, Offer>>,

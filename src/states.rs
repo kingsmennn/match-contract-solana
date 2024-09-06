@@ -73,8 +73,10 @@ pub enum AccountType {
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, PartialEq)]
 pub enum RequestLifecycle {
     Pending = 0,
-    AcceptedByBuyer = 1,
-    Completed = 2,
+    AcceptedBySeller = 1,
+    AcceptedByBuyer = 2,
+    RequestLocked = 3,
+    Completed = 4,
 }
 
 impl Default for RequestLifecycle {

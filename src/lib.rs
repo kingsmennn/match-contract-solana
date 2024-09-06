@@ -122,6 +122,7 @@ pub mod marketplace {
             latitude,
             longitude,
         };
+        store.authority = ctx.accounts.authority.key();
 
         ctx.accounts.store_counter.current += 1;
 
@@ -168,6 +169,7 @@ pub mod marketplace {
             longitude,
         };
         request.updated_at = Clock::get().unwrap().unix_timestamp as u64;
+        request.authority = ctx.accounts.authority.key();
 
         ctx.accounts.request_counter.current += 1;
 
@@ -222,6 +224,7 @@ pub mod marketplace {
         offer.is_accepted = false;
         offer.created_at = Clock::get().unwrap().unix_timestamp as u64;
         offer.updated_at = Clock::get().unwrap().unix_timestamp as u64;
+        offer.authority = ctx.accounts.authority.key();
 
         request.seller_ids.push(offer.seller_id);
 
@@ -241,7 +244,7 @@ pub mod marketplace {
         Ok(())
     }
 
-    pub fn accept_offer(ctx: Context<AcceptOffer>, offer_id: u64) -> Result<()> {
+    pub fn accept_offer(ctx: Context<AcceptOffer>) -> Result<()> {
         let user = &mut ctx.accounts.user;
         let offer = &mut ctx.accounts.offer;
         let request = &mut ctx.accounts.request;
@@ -264,15 +267,17 @@ pub mod marketplace {
             return err!(MarketplaceError::RequestLocked);
         }
 
-        for prev_offer_id in request.offer_ids.iter() {
-            // let previous_offer = &mut ctx.accounts.offers[*prev_offer_id as usize];
-            // previous_offer.is_accepted = false;
-            // emit!(OfferAccepted {
-            //     offer_id: previous_offer.id,
-            //     buyer_address: *ctx.accounts.user.to_account_info().key,
-            //     is_accepted: false,
-            // });
-        }
+        //TODO: fix this reset
+
+        // for prev_offer_id in request.offer_ids.iter() {
+        //     // let previous_offer = &mut ctx.accounts.offers[*prev_offer_id as usize];
+        //     // previous_offer.is_accepted = false;
+        //     // emit!(OfferAccepted {
+        //     //     offer_id: previous_offer.id,
+        //     //     buyer_address: *ctx.accounts.user.to_account_info().key,
+        //     //     is_accepted: false,
+        //     // });
+        // }
 
         offer.is_accepted = true;
         offer.updated_at = Clock::get().unwrap().unix_timestamp as u64;
@@ -348,7 +353,7 @@ pub struct CreateStore<'info> {
     #[account(init, payer = user, space = 8 + size_of::<Store>(),        
     seeds = [STORE_TAG, authority.key().as_ref(),&store_counter.current.to_le_bytes()],
     bump,)]
-    pub store: Box<Account<'info, Store>>,
+      pub store: Box<Account<'info, Store>>,
     #[account(mut)]
     pub authority: Signer<'info>,
     #[account(

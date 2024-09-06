@@ -16,11 +16,11 @@ pub mod marketplace {
         let request_counter = &mut ctx.accounts.request_counter;
         let offer_counter = &mut ctx.accounts.offer_counter;
     
-        // Initialize counters to zero
-        user_counter.current = 0;
-        store_counter.current = 0;
-        request_counter.current = 0;
-        offer_counter.current = 0;
+        // Initialize counters to one
+        user_counter.current = 1;
+        store_counter.current = 1;
+        request_counter.current = 1;
+        offer_counter.current = 1;
     
         msg!("Counters initialized: Users, Stores, Requests, Offers");
         
@@ -46,10 +46,7 @@ pub mod marketplace {
         if account_type != AccountType::Buyer && account_type != AccountType::Seller {
             return err!(MarketplaceError::InvalidAccountType);
         }
-
-        if counter.current == 0 {
-            counter.current = 1;
-        }
+     
 
         user.id = counter.current;
 

@@ -15,16 +15,17 @@ pub struct User {
 
 #[account]
 pub struct Store {
+    pub authority: Pubkey,
     pub id: u64,
     pub name: String,
     pub description: String,
     pub phone: String,
     pub location: Location,
-    pub authority: Pubkey,
 }
 
 #[account]
 pub struct Request {
+    pub authority: Pubkey,
     pub id: u64,
     pub name: String,
     pub buyer_id: u64,
@@ -38,11 +39,11 @@ pub struct Request {
     pub created_at: u64,
     pub updated_at: u64,
     pub lifecycle: RequestLifecycle,
-    pub authority: Pubkey,
 }
 
 #[account]
 pub struct Offer {
+    pub authority: Pubkey,
     pub id: u64,
     pub request_id: u64,
     pub price: i64,
@@ -52,7 +53,6 @@ pub struct Offer {
     pub is_accepted: bool,
     pub created_at: u64,
     pub updated_at: u64,
-    pub authority: Pubkey,
 }
 
 #[account]

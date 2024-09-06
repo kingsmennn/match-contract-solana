@@ -10,6 +10,24 @@ use std::mem::size_of;
 pub mod marketplace {
     use super::*;
 
+    pub fn initialize_counters(ctx: Context<InitializeCounters>) -> Result<()> {
+        let user_counter = &mut ctx.accounts.user_counter;
+        let store_counter = &mut ctx.accounts.store_counter;
+        let request_counter = &mut ctx.accounts.request_counter;
+        let offer_counter = &mut ctx.accounts.offer_counter;
+    
+        // Initialize counters to zero
+        user_counter.current = 0;
+        store_counter.current = 0;
+        request_counter.current = 0;
+        offer_counter.current = 0;
+    
+        msg!("Counters initialized: Users, Stores, Requests, Offers");
+        
+        Ok(())
+    }
+    
+
     pub fn create_user(
         ctx: Context<CreateUser>,
         username: String,
@@ -294,7 +312,11 @@ pub struct CreateUser<'info> {
     pub user: Box<Account<'info, User>>,
     #[account(mut)]
     pub authority: Signer<'info>,
-    #[account(mut)]
+    #[account(
+        mut,
+        seeds = [USER_COUNTER],
+        bump,
+    )]
     pub user_counter: Box<Account<'info, Counter>>,
     pub system_program: Program<'info, System>,
 }
@@ -329,7 +351,11 @@ pub struct CreateStore<'info> {
     pub store: Box<Account<'info, Store>>,
     #[account(mut)]
     pub authority: Signer<'info>,
-    #[account(mut)]
+    #[account(
+        mut,
+        seeds = [STORE_COUNTER],
+        bump,
+    )]
     pub store_counter: Box<Account<'info, Counter>>,
     pub system_program: Program<'info, System>,
 }
@@ -348,7 +374,11 @@ pub struct CreateRequest<'info> {
     seeds = [REQUEST_TAG, authority.key().as_ref(),&request_counter.current.to_le_bytes()],
     bump,)]
     pub request: Box<Account<'info, Request>>,
-    #[account(mut)]
+    #[account(
+        mut,
+        seeds = [REQUEST_COUNTER],
+        bump,
+    )]
     pub request_counter: Box<Account<'info, Counter>>,
     #[account(mut)]
     pub authority: Signer<'info>,
@@ -373,7 +403,11 @@ pub struct CreateOffer<'info> {
     pub offer: Box<Account<'info, Offer>>,
     #[account(mut)]
     pub authority: Signer<'info>,
-    #[account(mut)]
+    #[account(
+        mut,
+        seeds = [OFFER_COUNTER],
+        bump,
+    )]
     pub offer_counter: Box<Account<'info, Counter>>,
     pub system_program: Program<'info, System>,
 }
@@ -415,4 +449,48 @@ pub enum MarketplaceError {
     OfferAlreadyAccepted,
     #[msg("Request locked.")]
     RequestLocked,
+}
+
+
+#[derive(Accounts)]
+pub struct InitializeCounters<'info> {
+    #[account(
+        init,
+        seeds = [USER_COUNTER],
+        bump,
+        payer = authority,
+        space = 8 + size_of::<Counter>()
+    )]
+    pub user_counter: Box<Account<'info, Counter>>,
+
+    #[account(
+        init,
+        seeds = [STORE_COUNTER],
+        bump,
+        payer = authority,
+        space = 8 + size_of::<Counter>()
+    )]
+    pub store_counter: Box<Account<'info, Counter>>,
+
+    #[account(
+        init,
+        seeds = [REQUEST_COUNTER],
+        bump,
+        payer = authority,
+        space = 8 + size_of::<Counter>()
+    )]
+    pub request_counter: Box<Account<'info, Counter>>,
+
+    #[account(
+        init,
+        seeds = [OFFER_COUNTER],
+        bump,
+        payer = authority,
+        space = 8 + size_of::<Counter>()
+    )]
+    pub offer_counter: Box<Account<'info, Counter>>,
+
+    #[account(mut)]
+    pub authority: Signer<'info>,
+    pub system_program: Program<'info, System>,
 }

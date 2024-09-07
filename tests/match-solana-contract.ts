@@ -95,15 +95,15 @@ describe("match-solana-contract", () => {
 
   it("Can create a new user and return true values", async () => {
     const user = await program.account.user.fetch(profilePda);
-    expect(user.username).to.be.equals(payload.username);
-    expect(user.phone).to.be.equals(payload.phone);
-    expect(Number(user.location.latitude)).to.be.equals(
+    expect(user.username).to.be.equal(payload.username);
+    expect(user.phone).to.be.equal(payload.phone);
+    expect(Number(user.location.latitude)).to.be.equal(
       Number(payload.latitude)
     );
-    expect(Number(user.location.longitude)).to.be.equals(
+    expect(Number(user.location.longitude)).to.be.equal(
       Number(payload.longitude)
     );
-    expect(user.accountType).to.be.deep.equals(payload.account_type);
+    expect(user.accountType).to.be.deep.equal(payload.account_type);
   });
 
   it("Can update a user and return true values", async () => {
@@ -114,7 +114,6 @@ describe("match-solana-contract", () => {
       longitude: new BN(Math.trunc(7.8 * 10 ** LOCATION_DECIMALS).toString()),
       account_type: { seller: {} },
     };
-    return;
 
     await program.methods
       .updateUser(
@@ -131,14 +130,14 @@ describe("match-solana-contract", () => {
       .rpc();
 
     const user = await program.account.user.fetch(profilePda);
-    expect(user.username).to.be.equals(newPayload.username);
-    expect(user.phone).to.be.equals(newPayload.phone);
-    expect(Number(user.location.latitude)).to.be.equals(
+    expect(user.username).to.be.equal(newPayload.username);
+    expect(user.phone).to.be.equal(newPayload.phone);
+    expect(Number(user.location.latitude)).to.be.equal(
       Number(newPayload.latitude)
     );
-    expect(Number(user.location.longitude)).to.be.equals(
+    expect(Number(user.location.longitude)).to.be.equal(
       Number(newPayload.longitude)
     );
-    expect(user.accountType).to.be.deep.equals(newPayload.account_type);
+    expect(user.accountType).to.be.deep.equal(newPayload.account_type);
   });
 });

@@ -27,7 +27,7 @@ describe("match-solana-contract", function () {
   let REQUEST_COUNTER_PUBKEY: PublicKey;
   let OFFER_COUNTER_PUBKEY: PublicKey;
   let profilePda: PublicKey;
-  let sellerPda: PublicKey;
+  let buyerPda: PublicKey;
 
   const buyerPayload = {
     username: "test",
@@ -45,12 +45,12 @@ describe("match-solana-contract", function () {
     account_type: { seller: {} },
   };
 
-  const seller = anchor.web3.Keypair.generate();
+  const buyer = anchor.web3.Keypair.generate();
 
   beforeEach(async function () {
     if (profilePda) return;
     await provider.connection.requestAirdrop(
-      seller.publicKey,
+      buyer.publicKey,
       anchor.web3.LAMPORTS_PER_SOL * 1
     );
     const [userCounterPDA] = PublicKey.findProgramAddressSync(
@@ -91,13 +91,13 @@ describe("match-solana-contract", function () {
       program.programId
     );
 
-    const [sellerPda_] = PublicKey.findProgramAddressSync(
-      [utf8.encode(USER_TAG), seller.publicKey.toBuffer()],
+    const [buyerPda_] = PublicKey.findProgramAddressSync(
+      [utf8.encode(USER_TAG), buyer.publicKey.toBuffer()],
       program.programId
     );
 
     profilePda = profilePda_;
-    sellerPda = sellerPda_;
+    buyerPda = buyerPda_;
 
     await program.methods
       .createUser(
@@ -118,19 +118,19 @@ describe("match-solana-contract", function () {
 
     await program.methods
       .createUser(
-        sellerPayload.username,
-        sellerPayload.phone,
-        sellerPayload.latitude,
-        sellerPayload.longitude,
-        sellerPayload.account_type
+        buyerPayload.username,
+        buyerPayload.phone,
+        buyerPayload.latitude,
+        buyerPayload.longitude,
+        buyerPayload.account_type
       )
       .accounts({
-        user: sellerPda,
+        user: buyerPda,
         systemProgram: SystemProgram.programId,
         userCounter: USER_COUNTER_PUBKEY,
-        authority: seller.publicKey,
+        authority: buyer.publicKey,
       })
-      .signers([seller])
+      .signers([buyer])
       .rpc();
   });
 
@@ -234,10 +234,6 @@ describe("match-solana-contract", function () {
       lat: Math.trunc(4.383 * 10 ** LOCATION_DECIMALS),
       images: ["image1", "image2"],
     };
-    const [profilePda, _] = PublicKey.findProgramAddressSync(
-      [utf8.encode(USER_TAG), provider.publicKey.toBuffer()],
-      program.programId
-    );
 
     const requestCounter = await program.account.counter.fetch(
       REQUEST_COUNTER_PUBKEY
@@ -246,7 +242,7 @@ describe("match-solana-contract", function () {
     const [requestPda] = PublicKey.findProgramAddressSync(
       [
         utf8.encode(REQUEST_TAG),
-        provider.publicKey.toBuffer(),
+        buyerPda.toBuffer(),
         Buffer.from(requestCounter.current.toArray("le", 8)),
       ],
       program.programId
@@ -261,12 +257,13 @@ describe("match-solana-contract", function () {
         new BN(payload.long.toString())
       )
       .accounts({
-        user: profilePda,
+        user: buyerPda,
         systemProgram: SystemProgram.programId,
         requestCounter: REQUEST_COUNTER_PUBKEY,
-        authority: provider.publicKey,
+        authority: buyer.publicKey,
         request: requestPda,
       })
+      .signers([buyer])
       .rpc();
   });
 });

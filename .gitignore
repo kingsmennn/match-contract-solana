@@ -31,3 +31,5 @@ Cargo.lock
 **/*.rs.bk
 test-ledger
 .yarn
+
+.env

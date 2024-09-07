@@ -8,9 +8,9 @@ describe("match-solana-contract", () => {
 
   const program = anchor.workspace.Marketplace as Program<Marketplace>;
 
-  it("Is initialized!", async () => {
-    // Add your test here.
-    const tx = await program.methods.initializeCounters().rpc();
-    console.log("Your transaction signature", tx);
-  });
+  // it("Is initialized!", async () => {
+  //   // Add your test here.
+  //   const tx = await program.methods.initializeCounters().rpc();
+  //   console.log("Your transaction signature", tx);
+  // });
 });

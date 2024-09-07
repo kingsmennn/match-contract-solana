@@ -3,7 +3,7 @@ pub mod events;
 pub mod states;
 use anchor_lang::prelude::*;
 
-declare_id!("6VxaVo2xoWwz1jsU3SGBNRaBigEG8mcwm8mBLMP7Nha7");
+declare_id!("EPDpaEoRGQbZHBG1wJkd4Vae44UPmTLMmDreLcjrkfAg");
 use crate::{constants::*, events::*, states::*};
 use solana_program::pubkey;
 use std::mem::size_of;

@@ -273,15 +273,15 @@ pub mod marketplace {
         if request.seller_ids.len() != ctx.remaining_accounts.len() {
             return err!(MarketplaceError::IncorrectNumberOfSellers);
         }
-        
 
-        //TODO: fix this reset
         for account_info in ctx.remaining_accounts.iter() {
-            let mut previous_offer: Account<Offer> = Account::try_from(account_info)?;
-        
-            // Reset previous offers
+            let mut data = account_info.try_borrow_mut_data()?;
+
+            let mut previous_offer = Offer::try_deserialize(&mut data.as_ref()).expect("Error Deserializing Data");
+            
             if previous_offer.is_accepted  && previous_offer.request_id == request.id {
                 previous_offer.is_accepted = false;
+                previous_offer.try_serialize(&mut data.as_mut())?;
                 emit!(OfferAccepted {
                     offer_id: previous_offer.id,
                     buyer_address: *ctx.accounts.user.to_account_info().key,

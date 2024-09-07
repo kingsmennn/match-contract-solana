@@ -271,16 +271,19 @@ pub mod marketplace {
 
         //TODO: fix this reset
 
-        // for offer_loader in ctx.accounts.previous_offer_loader.iter() {
-        //     let previous_offer = offer_loader.load_mut()?;
-        //     previous_offer.is_accepted = false;
-    
-        //     // Emit event for each previous offer reset
-        //     emit!(OfferAccepted {
-        //         offer_id: previous_offer.id,
-        //         buyer_address: *ctx.accounts.user.to_account_info().key,
-        //         is_accepted: false,
-        //     });
+        // for account_info in ctx.remaining_accounts.iter() {
+        //     let mut previous_offer: Account<Offer> = Account::try_from(account_info)?;
+        
+        //     // Reset previous offers
+        //     if previous_offer.is_accepted {
+        //         previous_offer.is_accepted = false;
+        
+        //         emit!(OfferAccepted {
+        //             offer_id: previous_offer.id,
+        //             buyer_address: *ctx.accounts.user.to_account_info().key,
+        //             is_accepted: false,
+        //         });
+        //     }
         // }
 
         offer.is_accepted = true;
@@ -438,8 +441,6 @@ pub struct AcceptOffer<'info> {
     #[account(mut)]
     pub request: Box<Account<'info, Request>>,
     pub system_program: Program<'info, System>,
-    // #[account(mut)]
-    // pub previous_offer_loader: AccountLoader<'info, Offer>,
 }
 
 #[error_code]

@@ -88,6 +88,7 @@ describe("match-solana-contract", function () {
       [utf8.encode(OFFER_COUNTER)],
       program.programId
     );
+
     await program.methods
       .initializeCounters()
       .accounts({

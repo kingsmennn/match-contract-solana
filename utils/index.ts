@@ -1,3 +1,4 @@
+import { BN, utils } from "@coral-xyz/anchor";
 import { PublicKey } from "@solana/web3.js";
 
 export const LOCATION_DECIMALS = 18;
@@ -23,3 +24,6 @@ export const STORE_COUNTER = "STORE_COUNTER";
 export const REQUEST_COUNTER = "REQUEST_COUNTER";
 
 export const OFFER_COUNTER = "OFFER_COUNTER";
+
+export const ntobs58 = (x: any) =>
+  utils.bytes.bs58.encode(new BN(x).toArrayLike(Buffer, "le", 8));

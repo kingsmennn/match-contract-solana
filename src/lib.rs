@@ -269,22 +269,26 @@ pub mod marketplace {
             return err!(MarketplaceError::RequestLocked);
         }
 
-        //TODO: fix this reset
 
-        // for account_info in ctx.remaining_accounts.iter() {
-        //     let mut previous_offer: Account<Offer> = Account::try_from(account_info)?;
+        if request.seller_ids.len() != ctx.remaining_accounts.len() {
+            return err!(MarketplaceError::IncorrectNumberOfSellers);
+        }
         
-        //     // Reset previous offers
-        //     if previous_offer.is_accepted {
-        //         previous_offer.is_accepted = false;
+
+        //TODO: fix this reset
+        for account_info in ctx.remaining_accounts.iter() {
+            let mut previous_offer: Account<Offer> = Account::try_from(account_info)?;
         
-        //         emit!(OfferAccepted {
-        //             offer_id: previous_offer.id,
-        //             buyer_address: *ctx.accounts.user.to_account_info().key,
-        //             is_accepted: false,
-        //         });
-        //     }
-        // }
+            // Reset previous offers
+            if previous_offer.is_accepted  && previous_offer.request_id == request.id {
+                previous_offer.is_accepted = false;
+                emit!(OfferAccepted {
+                    offer_id: previous_offer.id,
+                    buyer_address: *ctx.accounts.user.to_account_info().key,
+                    is_accepted: false,
+                });
+            }
+        }
 
         offer.is_accepted = true;
         offer.updated_at = Clock::get().unwrap().unix_timestamp as u64;
@@ -461,6 +465,8 @@ pub enum MarketplaceError {
     OfferAlreadyAccepted,
     #[msg("Request locked.")]
     RequestLocked,
+    #[msg("Incorrect number of sellers.")]
+    IncorrectNumberOfSellers,
 }
 
 

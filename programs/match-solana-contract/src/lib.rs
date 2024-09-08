@@ -41,7 +41,7 @@ pub mod marketplace {
         account_type: AccountType,
     ) -> Result<()> {
         let user = &mut ctx.accounts.user;
-        let counter = &mut ctx.accounts.user_counter;
+        let user_counter = &mut ctx.accounts.user_counter;
 
         if user.id != 0 {
             return err!(MarketplaceError::UserAlreadyExists);
@@ -52,9 +52,9 @@ pub mod marketplace {
         }
      
 
-        user.id = counter.current;
+        user.id = user_counter.current;
 
-        counter.current += 1;
+        user_counter.current = user_counter.current.checked_add(1).unwrap();
 
         user.username = username;
         user.phone = phone;
@@ -110,6 +110,7 @@ pub mod marketplace {
         longitude: i64,
     ) -> Result<()> {
         let user = &mut ctx.accounts.user;
+        let store_counter = &mut ctx.accounts.store_counter;
 
         if user.account_type != AccountType::Seller {
             return err!(MarketplaceError::OnlySellersAllowed);
@@ -117,7 +118,7 @@ pub mod marketplace {
 
         let store = &mut ctx.accounts.store;
 
-        store.id = ctx.accounts.store_counter.current;
+        store.id = store_counter.current;
         store.name = name;
         store.description = description;
         store.phone = phone;
@@ -127,7 +128,7 @@ pub mod marketplace {
         };
         store.authority = ctx.accounts.authority.key();
 
-        ctx.accounts.store_counter.current += 1;
+        store_counter.current = store_counter.current.checked_add(1).unwrap();
 
         emit!(StoreCreated {
             seller_address: *ctx.accounts.user.to_account_info().key,
@@ -149,6 +150,7 @@ pub mod marketplace {
         longitude: i64,
     ) -> Result<()> {
         let user = &mut ctx.accounts.user;
+        let request_counter = &mut ctx.accounts.request_counter;
 
         if user.account_type != AccountType::Buyer {
             return err!(MarketplaceError::OnlyBuyersAllowed);
@@ -156,7 +158,7 @@ pub mod marketplace {
 
         let request = &mut ctx.accounts.request;
 
-        request.id = ctx.accounts.request_counter.current;
+        request.id = request_counter.current;
         request.name = name;
         request.buyer_id = user.id;
         request.sellers_price_quote = 0;
@@ -174,7 +176,7 @@ pub mod marketplace {
         request.updated_at = Clock::get().unwrap().unix_timestamp as u64;
         request.authority = ctx.accounts.authority.key();
 
-        ctx.accounts.request_counter.current += 1;
+        request_counter.current = request_counter.current.checked_add(1).unwrap();
 
         emit!(RequestCreated {
             request_id: request.id,
@@ -203,6 +205,7 @@ pub mod marketplace {
         store_name: String,
     ) -> Result<()> {
         let user = &mut ctx.accounts.user;
+        let offer_counter = &mut ctx.accounts.offer_counter;
 
         if user.account_type != AccountType::Seller {
             return err!(MarketplaceError::OnlySellersAllowed);
@@ -218,7 +221,7 @@ pub mod marketplace {
 
         let offer = &mut ctx.accounts.offer;
 
-        offer.id = ctx.accounts.offer_counter.current;
+        offer.id = offer_counter.current;
         offer.price = price;
         offer.images = images;
         offer.request_id = request.id;
@@ -242,7 +245,7 @@ pub mod marketplace {
             seller_ids: request.seller_ids.clone(),
         });
 
-        ctx.accounts.offer_counter.current += 1;
+        offer_counter.current = offer_counter.current.checked_add(1).unwrap();
 
         Ok(())
     }

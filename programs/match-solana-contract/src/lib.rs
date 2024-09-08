@@ -447,29 +447,6 @@ pub struct AcceptOffer<'info> {
     pub system_program: Program<'info, System>,
 }
 
-#[error_code]
-pub enum MarketplaceError {
-    #[msg("User already exists.")]
-    UserAlreadyExists,
-    #[msg("Invalid account type.")]
-    InvalidAccountType,
-    #[msg("Invalid user.")]
-    InvalidUser,
-    #[msg("Only sellers allowed.")]
-    OnlySellersAllowed,
-    #[msg("Only buyers allowed.")]
-    OnlyBuyersAllowed,
-    #[msg("Unauthorized buyer.")]
-    UnauthorizedBuyer,
-    #[msg("Offer already accepted.")]
-    OfferAlreadyAccepted,
-    #[msg("Request locked.")]
-    RequestLocked,
-    #[msg("Incorrect number of sellers.")]
-    IncorrectNumberOfSellers,
-}
-
-
 #[derive(Accounts)]
 pub struct InitializeCounters<'info> {
     #[account(
@@ -512,4 +489,26 @@ pub struct InitializeCounters<'info> {
     // #[account(mut, address = ADMIN_PUBKEY)]
     pub authority: Signer<'info>,
     pub system_program: Program<'info, System>,
+}
+
+#[error_code]
+pub enum MarketplaceError {
+    #[msg("User already exists.")]
+    UserAlreadyExists,
+    #[msg("Invalid account type.")]
+    InvalidAccountType,
+    #[msg("Invalid user.")]
+    InvalidUser,
+    #[msg("Only sellers allowed.")]
+    OnlySellersAllowed,
+    #[msg("Only buyers allowed.")]
+    OnlyBuyersAllowed,
+    #[msg("Unauthorized buyer.")]
+    UnauthorizedBuyer,
+    #[msg("Offer already accepted.")]
+    OfferAlreadyAccepted,
+    #[msg("Request locked.")]
+    RequestLocked,
+    #[msg("Incorrect number of sellers.")]
+    IncorrectNumberOfSellers,
 }

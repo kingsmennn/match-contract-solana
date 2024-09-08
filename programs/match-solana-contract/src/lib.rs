@@ -1,10 +1,11 @@
 pub mod constants;
 pub mod events;
 pub mod states;
+pub mod errors;
 use anchor_lang::prelude::*;
 
 declare_id!("EPDpaEoRGQbZHBG1wJkd4Vae44UPmTLMmDreLcjrkfAg");
-use crate::{constants::*, events::*, states::*};
+use crate::{constants::*, events::*, states::*, errors::*};
 use solana_program::pubkey;
 use std::mem::size_of;
 
@@ -489,26 +490,4 @@ pub struct InitializeCounters<'info> {
     // #[account(mut, address = ADMIN_PUBKEY)]
     pub authority: Signer<'info>,
     pub system_program: Program<'info, System>,
-}
-
-#[error_code]
-pub enum MarketplaceError {
-    #[msg("User already exists.")]
-    UserAlreadyExists,
-    #[msg("Invalid account type.")]
-    InvalidAccountType,
-    #[msg("Invalid user.")]
-    InvalidUser,
-    #[msg("Only sellers allowed.")]
-    OnlySellersAllowed,
-    #[msg("Only buyers allowed.")]
-    OnlyBuyersAllowed,
-    #[msg("Unauthorized buyer.")]
-    UnauthorizedBuyer,
-    #[msg("Offer already accepted.")]
-    OfferAlreadyAccepted,
-    #[msg("Request locked.")]
-    RequestLocked,
-    #[msg("Incorrect number of sellers.")]
-    IncorrectNumberOfSellers,
 }

@@ -198,7 +198,7 @@ pub mod marketplace {
         Ok(())
     }
 
-    pub fn remove_request(ctx: Context<RemoveRequest>) -> Result<()> {
+    pub fn delete_request(ctx: Context<RemoveRequest>) -> Result<()> {
         let request = &mut ctx.accounts.request;
         let authority = &ctx.accounts.authority;
     

@@ -447,5 +447,8 @@ describe("match-solana-contract", function () {
       )
       .signers([buyer])
       .rpc();
+
+    const updatedOffer = await program.account.offer.fetch(offerPda);
+    expect(updatedOffer.isAccepted).to.be.equal(true);
   });
 });

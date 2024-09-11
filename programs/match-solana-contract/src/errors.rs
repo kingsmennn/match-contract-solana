@@ -20,4 +20,8 @@ pub enum MarketplaceError {
     RequestLocked,
     #[msg("Incorrect number of sellers.")]
     IncorrectNumberOfSellers,
+    #[msg("Request not accepted.")]
+    RequestNotAccepted,
+    #[msg("Request not locked.")]
+    NotLocked,
 }

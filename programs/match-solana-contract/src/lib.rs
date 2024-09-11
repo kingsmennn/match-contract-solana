@@ -212,6 +212,28 @@ pub mod marketplace {
     
         Ok(())
     }
+
+    pub fn mark_request_as_completed(ctx: Context<MarkAsCompleteRequest>) -> Result<()> {
+        let request = &mut ctx.accounts.request;
+        let authority = &ctx.accounts.authority;
+    
+        if request.authority != authority.key() {
+            return err!(MarketplaceError::InvalidUser);
+        }
+    
+        if request.lifecycle != RequestLifecycle::AcceptedByBuyer {
+            return err!(MarketplaceError::RequestNotAccepted);
+        }
+
+        if request.updated_at + TIME_TO_LOCK  > Clock::get().unwrap().unix_timestamp as u64 {
+            return err!(MarketplaceError::RequestLocked);
+        }
+    
+        request.lifecycle = RequestLifecycle::Completed;
+        request.updated_at = Clock::get().unwrap().unix_timestamp as u64;
+    
+        Ok(())
+    }
     
 
 
@@ -428,6 +450,23 @@ pub struct CreateRequest<'info> {
 
 #[derive(Accounts)]
 pub struct RemoveRequest<'info> {
+    #[account(
+        mut,
+        has_one = authority,
+        seeds = [REQUEST_TAG, authority.key().as_ref(), &request.id.to_le_bytes()],
+        bump,
+        close = authority
+    )]
+    pub request: Box<Account<'info, Request>>,
+    
+    #[account(mut)]
+    pub authority: Signer<'info>,
+    
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+pub struct MarkAsCompleteRequest<'info> {
     #[account(
         mut,
         has_one = authority,

@@ -232,6 +232,11 @@ pub mod marketplace {
         offer.updated_at = Clock::get().unwrap().unix_timestamp as u64;
         offer.authority = ctx.accounts.authority.key();
 
+        if request.lifecycle == RequestLifecycle::Pending {
+            request.lifecycle = RequestLifecycle::AcceptedBySeller;
+            request.updated_at = Clock::get().unwrap().unix_timestamp as u64;
+        }
+
         request.seller_ids.push(offer.seller_id);
 
         emit!(OfferCreated {

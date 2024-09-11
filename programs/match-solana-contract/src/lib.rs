@@ -198,6 +198,23 @@ pub mod marketplace {
         Ok(())
     }
 
+    pub fn remove_request(ctx: Context<RemoveRequest>) -> Result<()> {
+        let request = &mut ctx.accounts.request;
+        let authority = &ctx.accounts.authority;
+    
+        if request.authority != authority.key() {
+            return err!(MarketplaceError::InvalidUser);
+        }
+    
+        if request.lifecycle != RequestLifecycle::Pending {
+            return err!(MarketplaceError::RequestLocked);
+        }
+    
+        Ok(())
+    }
+    
+
+
     pub fn create_offer(
         ctx: Context<CreateOffer>,
         price: i64,
@@ -406,6 +423,23 @@ pub struct CreateRequest<'info> {
     pub request_counter: Box<Account<'info, Counter>>,
     #[account(mut)]
     pub authority: Signer<'info>,
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+pub struct RemoveRequest<'info> {
+    #[account(
+        mut,
+        has_one = authority,
+        seeds = [REQUEST_TAG, authority.key().as_ref(), &request.id.to_le_bytes()],
+        bump,
+        close = authority
+    )]
+    pub request: Box<Account<'info, Request>>,
+    
+    #[account(mut)]
+    pub authority: Signer<'info>,
+    
     pub system_program: Program<'info, System>,
 }
 

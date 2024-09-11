@@ -23,5 +23,5 @@ pub enum MarketplaceError {
     #[msg("Request not accepted.")]
     RequestNotAccepted,
     #[msg("Request not locked.")]
-    NotLocked,
+    RequestNotLocked,
 }

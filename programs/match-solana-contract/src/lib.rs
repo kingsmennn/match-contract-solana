@@ -226,7 +226,7 @@ pub mod marketplace {
         }
 
         if request.updated_at + TIME_TO_LOCK  > Clock::get().unwrap().unix_timestamp as u64 {
-            return err!(MarketplaceError::RequestLocked);
+            return err!(MarketplaceError::RequestNotLocked);
         }
     
         request.lifecycle = RequestLifecycle::Completed;

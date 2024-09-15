@@ -60,8 +60,8 @@ pub struct Counter {
 }
 #[derive(Debug, AnchorSerialize, AnchorDeserialize, Clone)]
 pub struct Location {
-    pub latitude: i64,
-    pub longitude: i64,
+    pub latitude: i128,
+    pub longitude: i128,
 }
 
 #[derive(Debug, AnchorSerialize, AnchorDeserialize, Clone, PartialEq, Eq)]

@@ -5,8 +5,8 @@ pub struct StoreCreated {
     pub seller_address: Pubkey,
     pub store_id: u64,
     pub store_name: String,
-    pub latitude: i64,
-    pub longitude: i64,
+    pub latitude: i128,
+    pub longitude: i128,
 }
 
 #[event]
@@ -14,8 +14,8 @@ pub struct RequestCreated {
     pub request_id: u64,
     pub buyer_address: Pubkey,
     pub request_name: String,
-    pub latitude: i64,
-    pub longitude: i64,
+    pub latitude: i128,
+    pub longitude: i128,
     pub images: Vec<String>,
     pub lifecycle: u8,
     pub description: String,

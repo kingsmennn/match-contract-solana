@@ -36,8 +36,8 @@ pub mod marketplace {
         ctx: Context<CreateUser>,
         username: String,
         phone: String,
-        latitude: i64,
-        longitude: i64,
+        latitude: i128,
+        longitude: i128,
         account_type: AccountType,
     ) -> Result<()> {
         let user = &mut ctx.accounts.user;
@@ -76,8 +76,8 @@ pub mod marketplace {
         ctx: Context<UpdateUser>,
         username: String,
         phone: String,
-        latitude: i64,
-        longitude: i64,
+        latitude: i128,
+        longitude: i128,
         account_type: AccountType,
     ) -> Result<()> {
         let user = &mut ctx.accounts.user;
@@ -106,8 +106,8 @@ pub mod marketplace {
         name: String,
         description: String,
         phone: String,
-        latitude: i64,
-        longitude: i64,
+        latitude: i128,
+        longitude: i128
     ) -> Result<()> {
         let user = &mut ctx.accounts.user;
         let store_counter = &mut ctx.accounts.store_counter;
@@ -146,8 +146,8 @@ pub mod marketplace {
         name: String,
         description: String,
         images: Vec<String>,
-        latitude: i64,
-        longitude: i64,
+        latitude: i128,
+        longitude: i128,
     ) -> Result<()> {
         let user = &mut ctx.accounts.user;
         let request_counter = &mut ctx.accounts.request_counter;

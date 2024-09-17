@@ -54,3 +54,9 @@ pub struct OfferAccepted {
     pub buyer_address: Pubkey,
     pub is_accepted: bool,
 }
+#[event]
+pub struct LocationEnabled {
+    pub user_id: u64,
+    pub location_enabled: bool,
+    pub authority: Pubkey,
+}

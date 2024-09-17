@@ -16,6 +16,9 @@ pub const STORE_TAG: &[u8] = b"STORE_STATE";
 pub const REQUEST_TAG: &[u8] = b"REQUEST_STATE";
 
 #[constant]
+pub const LOCATION_PREFERENCE_TAG: &[u8] = b"LOCATION_PREFERENCE_STATE";
+
+#[constant]
 pub const OFFER_TAG: &[u8] = b"OFFER_STATE";
 
 #[constant]

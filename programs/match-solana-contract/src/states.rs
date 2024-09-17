@@ -55,6 +55,13 @@ pub struct Offer {
 }
 
 #[account]
+pub struct EnableLocation {
+    pub user_id: u64,
+    pub authority: Pubkey,
+    pub location_enabled: bool,
+}
+
+#[account]
 pub struct Counter {
     pub current: u64,
 }

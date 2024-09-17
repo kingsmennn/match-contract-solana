@@ -101,6 +101,7 @@ pub mod marketplace {
         Ok(())
     }
 
+
     pub fn create_store(
         ctx: Context<CreateStore>,
         name: String,
@@ -233,6 +234,30 @@ pub mod marketplace {
         request.updated_at = Clock::get().unwrap().unix_timestamp as u64;
     
         Ok(())
+    }
+
+    pub fn toggle_location(ctx: Context<ToggleLocation>, enabled: bool) -> Result<()> {
+        let authority = &ctx.accounts.authority.key();
+        let  user  = &ctx.accounts.user;
+        let  location_preference= &mut ctx.accounts.location;
+
+        location_preference.authority = authority.key();
+        location_preference.location_enabled = enabled;
+        location_preference.user_id = user.id;
+
+        emit!(LocationEnabled {
+            authority:  *ctx.accounts.user.to_account_info().key,
+            location_enabled: enabled,
+            user_id: user.id,
+        });
+        
+        Ok(())
+    }
+
+    pub fn get_location_preference(ctx: Context<GetLocationPreference>) -> Result<bool> {
+        let location = &ctx.accounts.location;
+        
+        Ok(location.location_enabled)
     }
     
 
@@ -462,6 +487,45 @@ pub struct RemoveRequest<'info> {
     #[account(mut)]
     pub authority: Signer<'info>,
     
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+pub struct ToggleLocation<'info> {
+    #[account(mut)]
+    pub authority: Signer<'info>,
+    #[account(
+        init_if_needed, 
+        payer = authority,
+        has_one = authority,
+        space = 8 + size_of::<EnableLocation>(), 
+        seeds = [LOCATION_PREFERENCE_TAG, authority.key().as_ref(),],
+        bump,
+    )]
+    pub location: Box<Account<'info, EnableLocation>>,
+    #[account(
+        mut,
+        seeds = [USER_TAG,authority.key().as_ref()],
+        bump,
+        has_one = authority
+    )]
+    pub user: Box<Account<'info, User>>,
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+pub struct GetLocationPreference<'info> {
+    #[account(mut)]
+    pub authority: Signer<'info>,
+    #[account(
+        init_if_needed, 
+        payer = authority,
+        has_one = authority,
+        space = 8 + size_of::<EnableLocation>(), 
+        seeds = [LOCATION_PREFERENCE_TAG, authority.key().as_ref(),],
+        bump,
+    )]
+    pub location: Box<Account<'info, EnableLocation>>,
     pub system_program: Program<'info, System>,
 }
 

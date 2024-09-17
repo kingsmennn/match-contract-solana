@@ -237,16 +237,11 @@ pub mod marketplace {
     }
 
     pub fn toggle_location(ctx: Context<ToggleLocation>, enabled: bool) -> Result<()> {
-        let authority = &ctx.accounts.authority.key();
-        let  user  = &ctx.accounts.user;
-        let  location_preference= &mut ctx.accounts.location;
+        let  user  = &mut ctx.accounts.user;
 
-        location_preference.authority = authority.key();
-        location_preference.location_enabled = enabled;
-        location_preference.user_id = user.id;
+        user.location_enabled = enabled;
 
         emit!(LocationEnabled {
-            authority:  *ctx.accounts.user.to_account_info().key,
             location_enabled: enabled,
             user_id: user.id,
         });
@@ -255,9 +250,9 @@ pub mod marketplace {
     }
 
     pub fn get_location_preference(ctx: Context<GetLocationPreference>) -> Result<bool> {
-        let location = &ctx.accounts.location;
+        let user = &ctx.accounts.user;
         
-        Ok(location.location_enabled)
+        Ok(user.location_enabled)
     }
     
 
@@ -495,15 +490,6 @@ pub struct ToggleLocation<'info> {
     #[account(mut)]
     pub authority: Signer<'info>,
     #[account(
-        init_if_needed, 
-        payer = authority,
-        has_one = authority,
-        space = 8 + size_of::<EnableLocation>(), 
-        seeds = [LOCATION_PREFERENCE_TAG, authority.key().as_ref(),],
-        bump,
-    )]
-    pub location: Box<Account<'info, EnableLocation>>,
-    #[account(
         mut,
         seeds = [USER_TAG,authority.key().as_ref()],
         bump,
@@ -518,14 +504,12 @@ pub struct GetLocationPreference<'info> {
     #[account(mut)]
     pub authority: Signer<'info>,
     #[account(
-        init_if_needed, 
-        payer = authority,
-        has_one = authority,
-        space = 8 + size_of::<EnableLocation>(), 
-        seeds = [LOCATION_PREFERENCE_TAG, authority.key().as_ref(),],
+        mut,
+        seeds = [USER_TAG,authority.key().as_ref()],
         bump,
+        has_one = authority
     )]
-    pub location: Box<Account<'info, EnableLocation>>,
+    pub user: Box<Account<'info, User>>,
     pub system_program: Program<'info, System>,
 }
 

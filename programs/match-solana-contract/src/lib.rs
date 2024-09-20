@@ -520,7 +520,6 @@ pub struct MarkAsCompleteRequest<'info> {
         has_one = authority,
         seeds = [REQUEST_TAG, authority.key().as_ref(), &request.id.to_le_bytes()],
         bump,
-        close = authority
     )]
     pub request: Box<Account<'info, Request>>,
     

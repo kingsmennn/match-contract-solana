@@ -66,6 +66,7 @@ pub mod marketplace {
         user.created_at = Clock::get().unwrap().unix_timestamp;
         user.updated_at = Clock::get().unwrap().unix_timestamp;
         user.authority = ctx.accounts.authority.key();
+        user.location_enabled = true;
 
         msg!("UserCreated: {:?}", user);
 

@@ -289,11 +289,11 @@ pub mod marketplace {
         let sol_price_in_usd = current_price.price as u64;
         let sol_price_for_offer = offer.price as u64;
 
-        let sol_amount = sol_price_for_offer / sol_price_in_usd;
+        let sol_amount_in_usd = sol_price_for_offer * sol_price_in_usd;
 
         token::transfer(
             CpiContext::new(cpi_program, cpi_accounts),
-            sol_amount)?;
+            sol_amount_in_usd)?;
 
         request.updated_at = Clock::get().unwrap().unix_timestamp as u64;
         request.paid = true;

@@ -4,13 +4,16 @@ pub mod states;
 pub mod errors;
 use anchor_lang::prelude::*;
 use solana_program::system_instruction;
-
+use anchor_spl::token::{self, Token, TokenAccount, Transfer as SplTransfer};
+use pyth_sdk_solana::load_price_feed_from_account_info;
 declare_id!("EPDpaEoRGQbZHBG1wJkd4Vae44UPmTLMmDreLcjrkfAg");
 use crate::{constants::*, events::*, states::*, errors::*};
 use solana_program::pubkey;
 use std::mem::size_of;
 
 const PORTAL_CLIENT_PUBKEY: Pubkey = pubkey!("BBb3WBLjQaBc7aT9pkzveEGsf8R3pm42mijrbrfYpM5w");
+const PYTH_USDC_FEED: Pubkey = pubkey!("EdVCmQ9FSPcVe5YySXDPCRmc8aDQLKJ9xvYBMZPie1Vw");
+const STALENESS_THRESHOLD: u64 = 60;
 #[program]
 pub mod marketplace {
     use super::*;
@@ -239,7 +242,70 @@ pub mod marketplace {
         Ok(())
     }
 
-    pub fn pay_for_request(ctx: Context<PayForRequest>) -> Result<()> {
+    pub fn pay_for_request_pusd(ctx: Context<PayForRequestPUSD>) -> Result<()> {
+        let request = &mut ctx.accounts.request;
+        let offer = &mut ctx.accounts.offer;
+        let authority = &ctx.accounts.authority;
+        let token_program = &ctx.accounts.token_program;
+        let destination = &ctx.accounts.to_ata;
+        let source = &ctx.accounts.from_ata;
+        let price_feed = &ctx.accounts.price_feed;
+    
+        if request.authority != authority.key() {
+            return err!(MarketplaceError::InvalidUser);
+        }
+    
+        if request.lifecycle != RequestLifecycle::AcceptedByBuyer {
+            return err!(MarketplaceError::RequestNotAccepted);
+        }
+
+        if request.updated_at + TIME_TO_LOCK  > Clock::get().unwrap().unix_timestamp as u64 {
+            return err!(MarketplaceError::RequestNotLocked);
+        }
+
+        if !offer.is_accepted {
+            return err!(MarketplaceError::RequestNotAccepted);
+        }
+
+
+        if request.locked_seller_id != offer.seller_id {
+            return err!(MarketplaceError::InvalidSeller);
+        }
+
+        let cpi_accounts = SplTransfer {
+            from: source.to_account_info().clone(),
+            to: destination.to_account_info().clone(),
+            authority: authority.to_account_info().clone(),
+        };
+
+        let cpi_program = token_program.to_account_info();
+
+        let price_feed = SolanaPriceAccount::account_info_to_feed(&price_feed).unwrap();
+        let current_timestamp = Clock::get()?.unix_timestamp;
+        let current_price = price_feed
+        .get_price_no_older_than(current_timestamp, STALENESS_THRESHOLD)
+        .unwrap();
+
+
+
+        let display_price = (u64::try_from(current_price.price).unwrap() as f64)
+        / (10u64.pow(u32::try_from(-current_price.expo).unwrap()) as f64);
+
+        // convert sol to pusd
+        let pusd_price = (offer.price as f64) / display_price;
+        
+        token::transfer(
+            CpiContext::new(cpi_program, cpi_accounts),
+            offer.price as u64)?;
+
+        request.updated_at = Clock::get().unwrap().unix_timestamp as u64;
+        request.paid = true;
+    
+        Ok(())
+    }
+
+
+    pub fn pay_for_request_sol(ctx: Context<PayForRequest>) -> Result<()> {
         let request = &mut ctx.accounts.request;
         let offer = &mut ctx.accounts.offer;
         let to = &mut ctx.accounts.to;
@@ -597,6 +663,40 @@ pub struct PayForRequest<'info> {
     pub to: AccountInfo<'info>,
     
     pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+pub struct PayForRequestPUSD<'info> {
+    #[account(
+        mut,
+        has_one = authority,
+        seeds = [REQUEST_TAG, authority.key().as_ref(), &request.id.to_le_bytes()],
+        bump,
+    )]
+    pub request: Box<Account<'info, Request>>,
+
+    #[account(
+        mut,
+    )]
+    pub offer: Box<Account<'info, Offer>>,
+    
+    #[account(mut)]
+    pub authority: Signer<'info>,
+
+    #[account(mut)]
+    pub from_ata: Account<'info, TokenAccount>,
+
+    #[account(address = PYTH_USDC_FEED)]
+    pub price_feed: AccountInfo<'info>,
+
+    #[account(mut)]
+    pub to_ata: Account<'info, TokenAccount>,
+
+    pub token_program: Program<'info, Token>,
+    
+    pub system_program: Program<'info, System>,
+
+
 }
 
 #[derive(Accounts)]

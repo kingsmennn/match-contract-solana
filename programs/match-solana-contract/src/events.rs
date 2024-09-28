@@ -21,7 +21,7 @@ pub struct RequestCreated {
     pub description: String,
     pub buyer_id: u64,
     pub seller_ids: Vec<u64>,
-    pub sellers_price_quote: i64,
+    pub sellers_price_quote: u64,
     pub locked_seller_id: u64,
     pub created_at: u64,
     pub updated_at: u64,
@@ -32,7 +32,7 @@ pub struct OfferCreated {
     pub offer_id: u64,
     pub seller_address: Pubkey,
     pub store_name: String,
-    pub price: i64,
+    pub price: u64,
     pub request_id: u64,
     pub images: Vec<String>,
     pub seller_id: u64,
@@ -45,7 +45,7 @@ pub struct RequestAccepted {
     pub offer_id: u64,
     pub seller_id: u64,
     pub updated_at: u64,
-    pub sellers_price_quote: i64,
+    pub sellers_price_quote: u64,
 }
 
 #[event]

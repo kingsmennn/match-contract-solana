@@ -369,7 +369,7 @@ pub mod marketplace {
 
     pub fn create_offer(
         ctx: Context<CreateOffer>,
-        price: i64,
+        price: u64,
         images: Vec<String>,
         store_name: String,
     ) -> Result<()> {

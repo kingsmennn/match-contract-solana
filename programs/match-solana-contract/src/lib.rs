@@ -176,6 +176,7 @@ pub mod marketplace {
             latitude,
             longitude,
         };
+        request.paid = false;
         request.updated_at = Clock::get().unwrap().unix_timestamp as u64;
         request.authority = ctx.accounts.authority.key();
 
@@ -256,15 +257,17 @@ pub mod marketplace {
             return err!(MarketplaceError::RequestNotLocked);
         }
 
+        if !offer.is_accepted {
+            return err!(MarketplaceError::RequestNotAccepted);
+        }
+
+
         if request.locked_seller_id != offer.seller_id {
             return err!(MarketplaceError::InvalidSeller);
         }
 
-        // get offer price
-
         let transfer_instruction = system_instruction::transfer(authority.key, to.key, offer.price as u64);
 
-         // Invoke the transfer instruction
         anchor_lang::solana_program::program::invoke_signed(
              &transfer_instruction,
              &[
@@ -274,9 +277,9 @@ pub mod marketplace {
              ],
              &[],
          )?;
-    
-        // request.lifecycle = RequestLifecycle::Paid;
+
         request.updated_at = Clock::get().unwrap().unix_timestamp as u64;
+        request.paid = true;
     
         Ok(())
     }
@@ -299,7 +302,6 @@ pub mod marketplace {
         
         Ok(user.location_enabled)
     }
-    
 
 
     pub fn create_offer(

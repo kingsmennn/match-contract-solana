@@ -86,3 +86,15 @@ impl Default for RequestLifecycle {
         RequestLifecycle::Pending
     }
 }
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, PartialEq)]
+pub enum CoinPayment {
+    Solana,
+    PyUsdt
+}
+
+impl Default for CoinPayment {
+    fn default() -> Self {
+        CoinPayment::Solana
+    }
+}

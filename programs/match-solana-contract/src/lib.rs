@@ -242,13 +242,11 @@ pub mod marketplace {
         Ok(())
     }
 
-    pub fn pay_for_request_pusd(ctx: Context<PayForRequestPUSD>) -> Result<()> { //TODO: payment is very buggy
+    pub fn pay_for_request(ctx: Context<PayForRequest>,coin: CoinPayment) -> Result<()> {
         let request = &mut ctx.accounts.request;
         let offer = &mut ctx.accounts.offer;
+        let to = &mut ctx.accounts.to;
         let authority = &ctx.accounts.authority;
-        let token_program = &ctx.accounts.token_program;
-        let destination = &ctx.accounts.to_ata;
-        let source = &ctx.accounts.from_ata;
         let price_feed = &ctx.accounts.price_feed;
     
         if request.authority != authority.key() {
@@ -272,79 +270,52 @@ pub mod marketplace {
             return err!(MarketplaceError::InvalidSeller);
         }
 
-        let cpi_accounts = SplTransfer {
-            from: source.to_account_info().clone(),
-            to: destination.to_account_info().clone(),
-            authority: authority.to_account_info().clone(),
-        };
+        match coin {
+            CoinPayment::Solana => {
+                let transfer_instruction = system_instruction::transfer(authority.key, to.key, offer.price);
 
-        let cpi_program = token_program.to_account_info();
+                anchor_lang::solana_program::program::invoke_signed(
+                    &transfer_instruction,
+                    &[
+                        authority.to_account_info(),
+                        to.clone(),
+                        ctx.accounts.system_program.to_account_info(),
+                    ],
+                    &[],
+                )?;
+            }
+            CoinPayment::PyUsdt => {
+                // convert sol to usdc
+                let price_feed = load_price_feed_from_account_info(&price_feed).unwrap();
+                let current_timestamp = Clock::get()?.unix_timestamp;
+                let current_price = price_feed
+                .get_price_no_older_than(current_timestamp, STALENESS_THRESHOLD)
+                .unwrap();
+        
+                let sol_price_in_usd = current_price.price as u64;
+                let sol_price_for_offer = offer.price as u64;
+        
+                let sol_amount_in_usd = sol_price_for_offer * sol_price_in_usd;
 
-        let price_feed = load_price_feed_from_account_info(&price_feed).unwrap();
-        let current_timestamp = Clock::get()?.unix_timestamp;
-        let current_price = price_feed
-        .get_price_no_older_than(current_timestamp, STALENESS_THRESHOLD)
-        .unwrap();
 
-        let sol_price_in_usd = current_price.price as u64;
-        let sol_price_for_offer = offer.price as u64;
 
-        let sol_amount_in_usd = sol_price_for_offer * sol_price_in_usd;
+                let cpi_accounts = SplTransfer {
+                    from: ctx.accounts.from_ata.to_account_info().clone(),
+                    to: to.to_account_info().clone(),
+                    authority: authority.to_account_info().clone(),
+                };
 
-        token::transfer(
-            CpiContext::new(cpi_program, cpi_accounts),
-            sol_amount_in_usd)?;
+                let cpi_program = ctx.accounts.token_program.to_account_info();
 
-        request.updated_at = Clock::get().unwrap().unix_timestamp as u64;
-        request.paid = true;
-    
+                token::transfer(
+                    CpiContext::new(cpi_program, cpi_accounts),
+                    sol_amount_in_usd,
+                )?;
+            }
+            
+        }
         Ok(())
-    }
-
-
-    pub fn pay_for_request_sol(ctx: Context<PayForRequest>) -> Result<()> {
-        let request = &mut ctx.accounts.request;
-        let offer = &mut ctx.accounts.offer;
-        let to = &mut ctx.accounts.to;
-        let authority = &ctx.accounts.authority;
-    
-        if request.authority != authority.key() {
-            return err!(MarketplaceError::InvalidUser);
-        }
-    
-        if request.lifecycle != RequestLifecycle::AcceptedByBuyer {
-            return err!(MarketplaceError::RequestNotAccepted);
-        }
-
-        if request.updated_at + TIME_TO_LOCK  > Clock::get().unwrap().unix_timestamp as u64 {
-            return err!(MarketplaceError::RequestNotLocked);
-        }
-
-        if !offer.is_accepted {
-            return err!(MarketplaceError::RequestNotAccepted);
-        }
-
-
-        if request.locked_seller_id != offer.seller_id {
-            return err!(MarketplaceError::InvalidSeller);
-        }
-
-        let transfer_instruction = system_instruction::transfer(authority.key, to.key, offer.price as u64);
-
-        anchor_lang::solana_program::program::invoke_signed(
-             &transfer_instruction,
-             &[
-                authority.to_account_info(),
-                to.clone(),
-                 ctx.accounts.system_program.to_account_info(),
-             ],
-             &[],
-         )?;
-
-        request.updated_at = Clock::get().unwrap().unix_timestamp as u64;
-        request.paid = true;
-    
-        Ok(())
+     
     }
 
     pub fn toggle_location(ctx: Context<ToggleLocation>, enabled: bool) -> Result<()> {
@@ -660,25 +631,6 @@ pub struct PayForRequest<'info> {
     pub to: AccountInfo<'info>,
     
     pub system_program: Program<'info, System>,
-}
-
-#[derive(Accounts)]
-pub struct PayForRequestPUSD<'info> {
-    #[account(
-        mut,
-        has_one = authority,
-        seeds = [REQUEST_TAG, authority.key().as_ref(), &request.id.to_le_bytes()],
-        bump,
-    )]
-    pub request: Box<Account<'info, Request>>,
-
-    #[account(
-        mut,
-    )]
-    pub offer: Box<Account<'info, Offer>>,
-    
-    #[account(mut)]
-    pub authority: Signer<'info>,
 
     #[account(mut)]
     pub from_ata: Account<'info, TokenAccount>,
@@ -690,10 +642,6 @@ pub struct PayForRequestPUSD<'info> {
     pub to_ata: Account<'info, TokenAccount>,
 
     pub token_program: Program<'info, Token>,
-    
-    pub system_program: Program<'info, System>,
-
-
 }
 
 #[derive(Accounts)]

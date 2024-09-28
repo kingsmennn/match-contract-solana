@@ -6,14 +6,15 @@ use anchor_lang::prelude::*;
 use solana_program::system_instruction;
 use anchor_spl::token::{self, Token, TokenAccount, Transfer as SplTransfer};
 use pyth_sdk_solana::load_price_feed_from_account_info;
+use pyth_solana_receiver_sdk::price_update::{get_feed_id_from_hex, PriceUpdateV2};
 declare_id!("EPDpaEoRGQbZHBG1wJkd4Vae44UPmTLMmDreLcjrkfAg");
 use crate::{constants::*, events::*, states::*, errors::*};
 use solana_program::pubkey;
 use std::mem::size_of;
 
 const PORTAL_CLIENT_PUBKEY: Pubkey = pubkey!("BBb3WBLjQaBc7aT9pkzveEGsf8R3pm42mijrbrfYpM5w");
-const PYTH_USDC_FEED: Pubkey = pubkey!("EdVCmQ9FSPcVe5YySXDPCRmc8aDQLKJ9xvYBMZPie1Vw");
-const STALENESS_THRESHOLD: u64 = 60;
+pub const MAXIMUM_AGE: u64 = 60; // One minute
+pub const FEED_ID: &str = "0xef0d8b6fda2ceba41da15d4095d1da392a0d2f8ed0c6c7bc0f4cfac8c280b56d"; // SOL/USD price feed id from https://pyth.network/developers/price-feed-ids
 #[program]
 pub mod marketplace {
     use super::*;
@@ -242,6 +243,19 @@ pub mod marketplace {
         Ok(())
     }
 
+    pub fn check_usd_conversion(ctx: Context<CheckUSDConversion>) -> Result<()> {
+        let price_update = &ctx.accounts.price_update;
+        let price = price_update.get_price_no_older_than(
+            &Clock::get()?,
+            MAXIMUM_AGE,
+            &get_feed_id_from_hex(FEED_ID)?,
+        )?;
+        
+        msg!("Price: {:?}", price.price);
+        Ok(())
+    }
+
+
     pub fn pay_for_request_pusd(ctx: Context<PayForRequestPUSD>) -> Result<()> {
         let request = &mut ctx.accounts.request;
         let offer = &mut ctx.accounts.offer;
@@ -249,7 +263,7 @@ pub mod marketplace {
         let token_program = &ctx.accounts.token_program;
         let destination = &ctx.accounts.to_ata;
         let source = &ctx.accounts.from_ata;
-        let price_feed = &ctx.accounts.price_feed;
+        let price_update = &mut ctx.accounts.price_update;
     
         if request.authority != authority.key() {
             return err!(MarketplaceError::InvalidUser);
@@ -272,6 +286,14 @@ pub mod marketplace {
             return err!(MarketplaceError::InvalidSeller);
         }
 
+        let price = price_update.get_price_no_older_than(
+            &Clock::get()?,
+            MAXIMUM_AGE,
+            &get_feed_id_from_hex(FEED_ID)?,
+        )?;
+
+        let sol_amount_in_usd = 0;
+
         let cpi_accounts = SplTransfer {
             from: source.to_account_info().clone(),
             to: destination.to_account_info().clone(),
@@ -279,17 +301,6 @@ pub mod marketplace {
         };
 
         let cpi_program = token_program.to_account_info();
-
-        let price_feed = load_price_feed_from_account_info(&price_feed).unwrap();
-        let current_timestamp = Clock::get()?.unix_timestamp;
-        let current_price = price_feed
-        .get_price_no_older_than(current_timestamp, STALENESS_THRESHOLD)
-        .unwrap();
-
-        let sol_price_in_usd = current_price.price as u64;
-        let sol_price_for_offer = offer.price as u64;
-
-        let sol_amount_in_usd = sol_price_for_offer * sol_price_in_usd;
 
         token::transfer(
             CpiContext::new(cpi_program, cpi_accounts),
@@ -683,8 +694,7 @@ pub struct PayForRequestPUSD<'info> {
     #[account(mut)]
     pub from_ata: Account<'info, TokenAccount>,
 
-    #[account(address = PYTH_USDC_FEED)]
-    pub price_feed: AccountInfo<'info>,
+    pub price_update: Account<'info, PriceUpdateV2>,
 
     #[account(mut)]
     pub to_ata: Account<'info, TokenAccount>,
@@ -694,6 +704,15 @@ pub struct PayForRequestPUSD<'info> {
     pub system_program: Program<'info, System>,
 
 
+}
+
+#[derive(Accounts)]
+pub struct CheckUSDConversion<'info> {
+    pub price_update: Account<'info, PriceUpdateV2>,
+
+    pub token_program: Program<'info, Token>,
+    
+    pub system_program: Program<'info, System>,
 }
 
 #[derive(Accounts)]

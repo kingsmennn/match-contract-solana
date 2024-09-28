@@ -3,13 +3,14 @@ pub mod events;
 pub mod states;
 pub mod errors;
 use anchor_lang::prelude::*;
+use solana_program::system_instruction;
 
 declare_id!("EPDpaEoRGQbZHBG1wJkd4Vae44UPmTLMmDreLcjrkfAg");
 use crate::{constants::*, events::*, states::*, errors::*};
-// use solana_program::pubkey;
+use solana_program::pubkey;
 use std::mem::size_of;
 
-// const ADMIN_PUBKEY: Pubkey = pubkey!("7iT5H86QPoNFjGt1X2cMEJot4mr5Ns4uzhLN3GJKQ5kk");
+const PORTAL_CLIENT_PUBKEY: Pubkey = pubkey!("BBb3WBLjQaBc7aT9pkzveEGsf8R3pm42mijrbrfYpM5w");
 #[program]
 pub mod marketplace {
     use super::*;
@@ -232,6 +233,49 @@ pub mod marketplace {
         }
     
         request.lifecycle = RequestLifecycle::Completed;
+        request.updated_at = Clock::get().unwrap().unix_timestamp as u64;
+    
+        Ok(())
+    }
+
+    pub fn pay_for_request(ctx: Context<PayForRequest>) -> Result<()> {
+        let request = &mut ctx.accounts.request;
+        let offer = &mut ctx.accounts.offer;
+        let to = &mut ctx.accounts.to;
+        let authority = &ctx.accounts.authority;
+    
+        if request.authority != authority.key() {
+            return err!(MarketplaceError::InvalidUser);
+        }
+    
+        if request.lifecycle != RequestLifecycle::AcceptedByBuyer {
+            return err!(MarketplaceError::RequestNotAccepted);
+        }
+
+        if request.updated_at + TIME_TO_LOCK  > Clock::get().unwrap().unix_timestamp as u64 {
+            return err!(MarketplaceError::RequestNotLocked);
+        }
+
+        if request.locked_seller_id != offer.seller_id {
+            return err!(MarketplaceError::InvalidSeller);
+        }
+
+        // get offer price
+
+        let transfer_instruction = system_instruction::transfer(authority.key, to.key, offer.price as u64);
+
+         // Invoke the transfer instruction
+        anchor_lang::solana_program::program::invoke_signed(
+             &transfer_instruction,
+             &[
+                authority.to_account_info(),
+                to.clone(),
+                 ctx.accounts.system_program.to_account_info(),
+             ],
+             &[],
+         )?;
+    
+        // request.lifecycle = RequestLifecycle::Paid;
         request.updated_at = Clock::get().unwrap().unix_timestamp as u64;
     
         Ok(())
@@ -529,6 +573,29 @@ pub struct MarkAsCompleteRequest<'info> {
     
     pub system_program: Program<'info, System>,
 }
+#[derive(Accounts)]
+pub struct PayForRequest<'info> {
+    #[account(
+        mut,
+        has_one = authority,
+        seeds = [REQUEST_TAG, authority.key().as_ref(), &request.id.to_le_bytes()],
+        bump,
+    )]
+    pub request: Box<Account<'info, Request>>,
+
+    #[account(
+        mut,
+    )]
+    pub offer: Box<Account<'info, Offer>>,
+    
+    #[account(mut)]
+    pub authority: Signer<'info>,
+
+    #[account(mut, address = PORTAL_CLIENT_PUBKEY)]
+    pub to: AccountInfo<'info>,
+    
+    pub system_program: Program<'info, System>,
+}
 
 #[derive(Accounts)]
 #[instruction()]
@@ -615,7 +682,7 @@ pub struct InitializeCounters<'info> {
     pub offer_counter: Box<Account<'info, Counter>>,
 
     #[account(mut)]
-    // #[account(mut, address = ADMIN_PUBKEY)]
+    // #[account(mut, address = PORTAL_CLIENT_PUBKEY)]
     pub authority: Signer<'info>,
     pub system_program: Program<'info, System>,
 }

@@ -5,7 +5,7 @@ pub mod errors;
 use anchor_lang::prelude::*;
 use solana_program::system_instruction;
 use anchor_spl::token::{self, Token, TokenAccount, Transfer as SplTransfer};
-use pyth_sdk_solana::load_price_feed_from_account_info;
+use pyth_sdk_solana::SolanaPriceAccount;
 declare_id!("EPDpaEoRGQbZHBG1wJkd4Vae44UPmTLMmDreLcjrkfAg");
 use crate::{constants::*, events::*, states::*, errors::*};
 use solana_program::pubkey;

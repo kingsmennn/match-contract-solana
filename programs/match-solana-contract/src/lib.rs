@@ -666,7 +666,8 @@ pub struct PayForRequest<'info> {
     
     #[account(mut)]
     pub authority: Signer<'info>,
-
+    
+    /// CHECK: This account is safe because it's verified by other checks in the program logic
     #[account(mut, address = PORTAL_CLIENT_PUBKEY)]
     pub to: AccountInfo<'info>,
     

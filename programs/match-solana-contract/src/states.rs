@@ -40,6 +40,7 @@ pub struct Request {
     pub updated_at: u64,
     pub lifecycle: RequestLifecycle,
     pub paid: bool,
+    pub accepted_offer_id: u64,
 }
 
 #[account]

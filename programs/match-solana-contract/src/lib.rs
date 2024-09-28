@@ -443,6 +443,7 @@ pub mod marketplace {
         request.offer_ids.push(offer.id);
         request.locked_seller_id = offer.seller_id;
         request.sellers_price_quote = offer.price;
+        request.accepted_offer_id = offer.id;
         request.lifecycle = RequestLifecycle::AcceptedByBuyer;
         request.updated_at = Clock::get().unwrap().unix_timestamp as u64;
 

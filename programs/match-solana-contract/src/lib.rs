@@ -5,7 +5,7 @@ pub mod errors;
 use anchor_lang::prelude::*;
 use solana_program::system_instruction;
 use anchor_spl::token::{self, Token, TokenAccount, Transfer as SplTransfer};
-use pyth_sdk_solana::SolanaPriceAccount;
+use pyth_sdk_solana::load_price_feed_from_account_info;
 declare_id!("EPDpaEoRGQbZHBG1wJkd4Vae44UPmTLMmDreLcjrkfAg");
 use crate::{constants::*, events::*, states::*, errors::*};
 use solana_program::pubkey;
@@ -280,23 +280,20 @@ pub mod marketplace {
 
         let cpi_program = token_program.to_account_info();
 
-        let price_feed = SolanaPriceAccount::account_info_to_feed(&price_feed).unwrap();
+        let price_feed = load_price_feed_from_account_info(&price_feed).unwrap();
         let current_timestamp = Clock::get()?.unix_timestamp;
         let current_price = price_feed
         .get_price_no_older_than(current_timestamp, STALENESS_THRESHOLD)
         .unwrap();
 
+        let sol_price_in_usd = current_price.price as u64;
+        let sol_price_for_offer = offer.price as u64;
 
+        let sol_amount = sol_price_for_offer / sol_price_in_usd;
 
-        let display_price = (u64::try_from(current_price.price).unwrap() as f64)
-        / (10u64.pow(u32::try_from(-current_price.expo).unwrap()) as f64);
-
-        // convert sol to pusd
-        let pusd_price = (offer.price as f64) / display_price;
-        
         token::transfer(
             CpiContext::new(cpi_program, cpi_accounts),
-            offer.price as u64)?;
+            sol_amount)?;
 
         request.updated_at = Clock::get().unwrap().unix_timestamp as u64;
         request.paid = true;

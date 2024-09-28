@@ -242,7 +242,7 @@ pub mod marketplace {
         Ok(())
     }
 
-    pub fn pay_for_request_pusd(ctx: Context<PayForRequestPUSD>) -> Result<()> {
+    pub fn pay_for_request_pusd(ctx: Context<PayForRequestPUSD>) -> Result<()> { //TODO: payment is very buggy
         let request = &mut ctx.accounts.request;
         let offer = &mut ctx.accounts.offer;
         let authority = &ctx.accounts.authority;

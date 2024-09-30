@@ -473,7 +473,7 @@ pub struct CreateUser<'info> {
         seeds = [USER_TAG,authority.key.as_ref()],
         bump,
         payer = authority,
-        space = 8 + size_of::<User>())]
+        space = 8 + size_of::<User>() + 1024)]
     pub user: Box<Account<'info, User>>,
     #[account(mut)]
     pub authority: Signer<'info>,
@@ -510,7 +510,7 @@ pub struct CreateStore<'info> {
         has_one = authority
     )]
     pub user: Box<Account<'info, User>>,
-    #[account(init, payer = authority ,space = 8 + size_of::<Store>(),        
+    #[account(init, payer = authority ,space = 8 + size_of::<Store>() + 1024,        
     seeds = [STORE_TAG, authority.key().as_ref(),&store_counter.current.to_le_bytes()],
     bump,)]
     pub store: Box<Account<'info, Store>>,

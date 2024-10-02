@@ -17,6 +17,8 @@ const PORTAL_PYUSD_TOKEN_ACCOUNT_PUBKEY: Pubkey = pubkey!("C39mqNh22HxaHHvYuTpJm
 const PYTH_USDC_FEED: Pubkey = pubkey!("EdVCmQ9FSPcVe5YySXDPCRmc8aDQLKJ9xvYBMZPie1Vw");
 const STALENESS_THRESHOLD: u64 = 60;
 pub const MAXIMUM_AGE: u64 = 60;
+const SOL_DECIMALS: i32 = 9;
+const PYUSD_DECIMALS:i32 = 6;
 const SOL_USD_PRICE_FEED:&str = "0xef0d8b6fda2ceba41da15d4095d1da392a0d2f8ed0c6c7bc0f4cfac8c280b56d";
 #[program]
 pub mod marketplace {
@@ -301,11 +303,13 @@ pub mod marketplace {
                 .unwrap();
         
                 let sol_price_in_usd = current_price.price as u64;
-                let sol_price_for_offer = offer.price as u64;
+                let sol_price_for_offer = offer.price;
         
                 let sol_amount_in_usd = sol_price_for_offer * sol_price_in_usd;
 
+                let divisor: u64 = 10u64.pow((SOL_DECIMALS - current_price.expo.abs() - PYUSD_DECIMALS) as u32);
 
+                let pyusd_amount = sol_amount_in_usd / divisor;
 
                 let cpi_accounts = SplTransfer {
                     from: ctx.accounts.from_ata.to_account_info().clone(),
@@ -317,7 +321,7 @@ pub mod marketplace {
 
                 token::transfer(
                     CpiContext::new(cpi_program, cpi_accounts),
-                    sol_amount_in_usd,
+                    pyusd_amount,
                 )?;
             },
             _ => {

@@ -4,6 +4,7 @@ pub mod states;
 pub mod errors;
 use anchor_lang::prelude::*;
 use solana_program::system_instruction;
+use pyth_solana_receiver_sdk::price_update::{get_feed_id_from_hex, PriceUpdateV2};
 use anchor_spl::token::{self, Token, TokenAccount, Transfer as SplTransfer};
 use pyth_sdk_solana::load_price_feed_from_account_info;
 declare_id!("EPDpaEoRGQbZHBG1wJkd4Vae44UPmTLMmDreLcjrkfAg");
@@ -15,6 +16,8 @@ const PORTAL_CLIENT_PUBKEY: Pubkey = pubkey!("BBb3WBLjQaBc7aT9pkzveEGsf8R3pm42mi
 const PORTAL_PYUSD_TOKEN_ACCOUNT_PUBKEY: Pubkey = pubkey!("C39mqNh22HxaHHvYuTpJmN7N9J6ftM7kCJjmAXd2ATHP");
 const PYTH_USDC_FEED: Pubkey = pubkey!("EdVCmQ9FSPcVe5YySXDPCRmc8aDQLKJ9xvYBMZPie1Vw");
 const STALENESS_THRESHOLD: u64 = 60;
+pub const MAXIMUM_AGE: u64 = 60;
+const SOL_USD_PRICE_FEED:&str = "0xef0d8b6fda2ceba41da15d4095d1da392a0d2f8ed0c6c7bc0f4cfac8c280b56d";
 #[program]
 pub mod marketplace {
     use super::*;
@@ -240,6 +243,18 @@ pub mod marketplace {
         request.lifecycle = RequestLifecycle::Completed;
         request.updated_at = Clock::get().unwrap().unix_timestamp as u64;
     
+        Ok(())
+    }
+
+    pub fn check_usd_conversion(ctx: Context<CheckUSDConversion>) -> Result<()> {
+        let price_update = &ctx.accounts.price_update;
+        let price = price_update.get_price_no_older_than(
+            &Clock::get()?,
+            MAXIMUM_AGE,
+            &get_feed_id_from_hex(SOL_USD_PRICE_FEED)?,
+        )?;
+        
+        msg!("Price: {:?}", price.price);
         Ok(())
     }
 
@@ -679,11 +694,22 @@ pub struct PayForRequest<'info> {
     #[account(mut)]
     pub authority: Signer<'info>,
 
+    /// CHECK: This is the account to which the payment is made
     #[account(mut, address = PORTAL_CLIENT_PUBKEY)]
     pub to: AccountInfo<'info>,
     
     pub system_program: Program<'info, System>,
 }
+
+#[derive(Accounts)]
+pub struct CheckUSDConversion<'info> {
+    pub price_update: Account<'info, PriceUpdateV2>,
+
+    pub token_program: Program<'info, Token>,
+    
+    pub system_program: Program<'info, System>,
+}
+
 #[derive(Accounts)]
 pub struct PayForRequestToken<'info> {
     #[account(
@@ -707,6 +733,7 @@ pub struct PayForRequestToken<'info> {
     #[account(mut)]
     pub from_ata: Account<'info, TokenAccount>,
 
+    /// CHECK: this is the price feed
     #[account(address = PYTH_USDC_FEED)]
     pub price_feed: AccountInfo<'info>,
 

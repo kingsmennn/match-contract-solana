@@ -270,6 +270,10 @@ pub mod marketplace {
             return err!(MarketplaceError::InvalidSeller);
         }
 
+        if request.paid {
+            return err!(MarketplaceError::RequestAlreadyPaid);
+        }
+
         request.paid = true;
 
         match coin {
@@ -336,6 +340,10 @@ pub mod marketplace {
 
         if request.locked_seller_id != offer.seller_id {
             return err!(MarketplaceError::InvalidSeller);
+        }
+
+        if request.paid {
+            return err!(MarketplaceError::RequestAlreadyPaid);
         }
 
         request.paid = true;

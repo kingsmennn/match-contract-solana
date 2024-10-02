@@ -27,5 +27,7 @@ pub enum MarketplaceError {
     #[msg("Invalid seller.")]
     InvalidSeller,
     #[msg("Invalid coin payment.")]
-    InvalidCoinPayment
+    InvalidCoinPayment,
+    #[msg("request already paid.")]
+    RequestAlreadyPaid
 }

@@ -26,4 +26,6 @@ pub enum MarketplaceError {
     RequestNotLocked,
     #[msg("Invalid seller.")]
     InvalidSeller,
+    #[msg("Invalid coin payment.")]
+    InvalidCoinPayment
 }

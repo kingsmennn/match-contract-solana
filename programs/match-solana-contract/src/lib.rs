@@ -788,7 +788,6 @@ pub struct InitializeCounters<'info> {
     pub offer_counter: Box<Account<'info, Counter>>,
 
     #[account(mut)]
-    // #[account(mut, address = PORTAL_CLIENT_PUBKEY)]
     pub authority: Signer<'info>,
     pub system_program: Program<'info, System>,
 }

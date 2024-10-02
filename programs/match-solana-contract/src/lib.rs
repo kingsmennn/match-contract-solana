@@ -270,6 +270,8 @@ pub mod marketplace {
             return err!(MarketplaceError::InvalidSeller);
         }
 
+        request.paid = true;
+
         match coin {
             CoinPayment::PyUsdt => {
                 // convert sol to usdc
@@ -304,6 +306,7 @@ pub mod marketplace {
             },
             
         }
+        
         Ok(())
     }
 
@@ -334,6 +337,8 @@ pub mod marketplace {
         if request.locked_seller_id != offer.seller_id {
             return err!(MarketplaceError::InvalidSeller);
         }
+
+        request.paid = true;
 
         match coin {
             CoinPayment::Solana => {

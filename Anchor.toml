@@ -11,7 +11,7 @@ match_solana_contract = "AovyJcj7yeBXRqDcGtCZKeKv7NP5JVjtpgW8U7jcYdfk"
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "Localnet"
+cluster = "Devnet"
 wallet = "/Users/dave/.config/solana/id.json"
 
 [scripts]

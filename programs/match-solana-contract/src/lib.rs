@@ -4,7 +4,7 @@ pub mod states;
 pub mod errors;
 use anchor_lang::prelude::*;
 use solana_program::system_instruction;
-use pyth_solana_receiver_sdk::price_update::{get_feed_id_from_hex, PriceUpdateV2};
+// use pyth_solana_receiver_sdk::price_update::{get_feed_id_from_hex, PriceUpdateV2};
 use anchor_spl::token::{self, Token, TokenAccount, Transfer as SplTransfer};
 use pyth_sdk_solana::load_price_feed_from_account_info;
 declare_id!("D3ZPj1Q9qAAod3kswZMuRtBsQJRkV37CwjSdCWvg7VmN");
@@ -249,14 +249,21 @@ pub mod marketplace {
     }
 
     pub fn check_usd_conversion(ctx: Context<CheckUSDConversion>) -> Result<()> {
-        let price_update = &ctx.accounts.price_update;
-        let price = price_update.get_price_no_older_than(
-            &Clock::get()?,
-            MAXIMUM_AGE,
-            &get_feed_id_from_hex(SOL_USD_PRICE_FEED)?,
-        )?;
+        let price_feed = &ctx.accounts.price_feed;
+
+        let price_feed = load_price_feed_from_account_info(&price_feed).unwrap();
+        let current_timestamp = Clock::get()?.unix_timestamp;
+        let current_price = price_feed
+        .get_price_no_older_than(current_timestamp, STALENESS_THRESHOLD)
+        .unwrap();
+
+        // let price = price_update.get_price_no_older_than(
+        //     &Clock::get()?,
+        //     MAXIMUM_AGE,
+        //     &get_feed_id_from_hex(SOL_USD_PRICE_FEED)?,
+        // )?;
         
-        msg!("Price: {:?}", price.price);
+        msg!("Price: {:?}", current_price.price);
         Ok(())
     }
 
@@ -707,8 +714,8 @@ pub struct PayForRequest<'info> {
 
 #[derive(Accounts)]
 pub struct CheckUSDConversion<'info> {
-    // JTmFx5zX9mM94itfk2nQcJnQQDPjcv4UPD7SYj6xDCV
-    pub price_update: Account<'info, PriceUpdateV2>,
+    #[account(address = PYTH_USDC_FEED)]
+    pub price_feed: AccountInfo<'info>,
 
     pub token_program: Program<'info, Token>,
     

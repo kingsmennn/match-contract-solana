@@ -12,6 +12,7 @@ use solana_program::pubkey;
 use std::mem::size_of;
 
 const PORTAL_CLIENT_PUBKEY: Pubkey = pubkey!("BBb3WBLjQaBc7aT9pkzveEGsf8R3pm42mijrbrfYpM5w");
+const PORTAL_PYUSD_TOKEN_ACCOUNT_PUBKEY: Pubkey = pubkey!("C39mqNh22HxaHHvYuTpJmN7N9J6ftM7kCJjmAXd2ATHP");
 const PYTH_USDC_FEED: Pubkey = pubkey!("EdVCmQ9FSPcVe5YySXDPCRmc8aDQLKJ9xvYBMZPie1Vw");
 const STALENESS_THRESHOLD: u64 = 60;
 #[program]
@@ -245,7 +246,6 @@ pub mod marketplace {
     pub fn pay_for_request_token(ctx: Context<PayForRequestToken>,coin: CoinPayment) -> Result<()> {
         let request = &mut ctx.accounts.request;
         let offer = &mut ctx.accounts.offer;
-        let to = &mut ctx.accounts.to;
         let authority = &ctx.accounts.authority;
         let price_feed = &ctx.accounts.price_feed;
     
@@ -288,7 +288,7 @@ pub mod marketplace {
 
                 let cpi_accounts = SplTransfer {
                     from: ctx.accounts.from_ata.to_account_info().clone(),
-                    to: to.to_account_info().clone(),
+                    to: ctx.accounts.to_ata.to_account_info().clone(),
                     authority: authority.to_account_info().clone(),
                 };
 
@@ -688,9 +688,6 @@ pub struct PayForRequestToken<'info> {
     
     #[account(mut)]
     pub authority: Signer<'info>,
-
-    #[account(mut, address = PORTAL_CLIENT_PUBKEY)]
-    pub to: AccountInfo<'info>,
     
     pub system_program: Program<'info, System>,
 
@@ -700,7 +697,7 @@ pub struct PayForRequestToken<'info> {
     #[account(address = PYTH_USDC_FEED)]
     pub price_feed: AccountInfo<'info>,
 
-    #[account(mut)]
+    #[account(mut,address = PORTAL_PYUSD_TOKEN_ACCOUNT_PUBKEY)]
     pub to_ata: Account<'info, TokenAccount>,
 
     pub token_program: Program<'info, Token>,

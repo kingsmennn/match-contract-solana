@@ -43,7 +43,7 @@ pub mod marketplace {
         offer_counter.current = 1;
         request_payment_counter.current = 1;
     
-        msg!("Counters initialized: Users, Stores, Requests, Offers");
+        msg!("Counters initialized: Users, Stores, Requests, Offers, RequestPayments");
         
         Ok(())
     }
@@ -276,6 +276,8 @@ pub mod marketplace {
         let from_ata = &ctx.accounts.from_ata;
         let to_ata = &ctx.accounts.to_ata;
         let token_program = &ctx.accounts.token_program;
+        let request_payment_counter = &mut ctx.accounts.request_payment_counter;
+        let request_payment_info = &mut ctx.accounts.request_payment_info;
     
         if request.authority != authority.key() {
             return err!(MarketplaceError::InvalidUser);
@@ -304,6 +306,17 @@ pub mod marketplace {
 
         request.paid = true;
         request.lifecycle = RequestLifecycle::Paid;
+        request_payment_info.authority = authority.key();
+        request_payment_info.request_id = request.id;
+        request_payment_info.buyer_id = request.buyer_id;
+        request_payment_info.price = offer.price;
+        request_payment_info.seller_id = offer.seller_id;
+        request_payment_info.created_at = Clock::get().unwrap().unix_timestamp as u64;
+        request_payment_info.updated_at = Clock::get().unwrap().unix_timestamp as u64;
+        request_payment_info.token = coin.clone();
+        request_payment_info.id = request_payment_counter.current;
+        request_payment_counter.current = request_payment_counter.current.checked_add(1).unwrap();
+
 
         match coin {
             CoinPayment::Pyusdt => {
@@ -324,6 +337,8 @@ pub mod marketplace {
                 // let pyusd_amount = sol_amount_in_usd / divisor;
 
                 let pyusd_amount = 1000000; //TODO: use price feed to get the price of pyusd
+
+                request_payment_info.amount = pyusd_amount;
 
                 let accounts = TransferChecked {
                     from: from_ata.to_account_info(),
@@ -354,6 +369,8 @@ pub mod marketplace {
         let offer = &mut ctx.accounts.offer;
         let to = &mut ctx.accounts.to;
         let authority = &ctx.accounts.authority;
+        let request_payment_counter = &mut ctx.accounts.request_payment_counter;
+        let request_payment_info = &mut ctx.accounts.request_payment_info;
     
         if request.authority != authority.key() {
             return err!(MarketplaceError::InvalidUser);
@@ -382,10 +399,22 @@ pub mod marketplace {
 
         request.paid = true;
         request.lifecycle = RequestLifecycle::Paid;
+        request_payment_info.authority = authority.key();
+        request_payment_info.request_id = request.id;
+        request_payment_info.buyer_id = request.buyer_id;
+        request_payment_info.price = offer.price;
+        request_payment_info.seller_id = offer.seller_id;
+        request_payment_info.created_at = Clock::get().unwrap().unix_timestamp as u64;
+        request_payment_info.updated_at = Clock::get().unwrap().unix_timestamp as u64;
+        request_payment_info.token = coin.clone();
+        request_payment_info.id = request_payment_counter.current;
+        request_payment_counter.current = request_payment_counter.current.checked_add(1).unwrap();
 
         match coin {
             CoinPayment::Solana => {
                 let transfer_instruction = system_instruction::transfer(authority.key, to.key, offer.price);
+
+                request_payment_info.amount = offer.price;
 
                 anchor_lang::solana_program::program::invoke_signed(
                     &transfer_instruction,

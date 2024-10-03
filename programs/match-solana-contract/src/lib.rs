@@ -262,8 +262,9 @@ pub mod marketplace {
         let authority = &ctx.accounts.authority;
         let price_feed = &ctx.accounts.price_feed;
         let mint = &ctx.accounts.mint;
-
-        
+        let from_ata = &ctx.accounts.from_ata;
+        let to_ata = &ctx.accounts.to_ata;
+        let token_program = &ctx.accounts.token_program;
     
         if request.authority != authority.key() {
             return err!(MarketplaceError::InvalidUser);
@@ -312,14 +313,14 @@ pub mod marketplace {
                 let pyusd_amount = sol_amount_in_usd / divisor;
 
                 let accounts = TransferChecked {
-                    from: ctx.accounts.from_ata.to_account_info(),
-                    to: ctx.accounts.to_ata.to_account_info(),
+                    from: from_ata.to_account_info(),
+                    to: to_ata.to_account_info(),
                     authority: authority.to_account_info(),
                     mint: mint.to_account_info(),
                 };
                 
                 let ctx = CpiContext::new(
-                    ctx.accounts.token_program.to_account_info(),
+                    token_program.to_account_info(),
                     accounts
                 );
 

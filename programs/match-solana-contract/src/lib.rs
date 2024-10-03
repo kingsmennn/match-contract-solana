@@ -4,25 +4,22 @@ pub mod states;
 pub mod errors;
 use anchor_lang::prelude::*;
 use solana_program::system_instruction;
-// use pyth_solana_receiver_sdk::price_update::{get_feed_id_from_hex, PriceUpdateV2};
-// use anchor_spl::token::{self, Token, TokenAccount, Transfer as SplTransfer};
-use anchor_spl::{
+use anchor_spl::
     token_interface::{
-        TokenAccount, Mint, MintTo, mint_to,
-        CloseAccount, close_account,
+        TokenAccount, Mint,
         TokenInterface, TransferChecked, transfer_checked
-    },
-    associated_token::AssociatedToken
-};
+    }
+;
+use solana_program::pubkey::Pubkey;
 use pyth_sdk_solana::load_price_feed_from_account_info;
-declare_id!("D3ZPj1Q9qAAod3kswZMuRtBsQJRkV37CwjSdCWvg7VmN");
+declare_id!("AQsGgUYaW8Bw8QqfqSeZRrPR6Zc6RAiwk5CCBjVYLQb2");
 use crate::{constants::*, events::*, states::*, errors::*};
 use solana_program::pubkey;
 use std::mem::size_of;
 
 const PORTAL_CLIENT_PUBKEY: Pubkey = pubkey!("BBb3WBLjQaBc7aT9pkzveEGsf8R3pm42mijrbrfYpM5w");
 const PORTAL_PYUSD_TOKEN_ACCOUNT_PUBKEY: Pubkey = pubkey!("2uGj33NgCcukhYdN2RMNsjRqkK3EbZV3GpGaYZf6ouW1");
-const PYTH_USDC_FEED: Pubkey = pubkey!("EdVCmQ9FSPcVe5YySXDPCRmc8aDQLKJ9xvYBMZPie1Vw");
+const PYTH_USDC_FEED: Pubkey = pubkey!("J83w4HKfqxwcq3BEMMkPFSppX3gqekLyLJBexebFVkix");
 const STALENESS_THRESHOLD: u64 = 60;
 pub const MAXIMUM_AGE: u64 = 60;
 const SOL_DECIMALS: i32 = 9;
@@ -242,8 +239,8 @@ pub mod marketplace {
             return err!(MarketplaceError::InvalidUser);
         }
     
-        if request.lifecycle != RequestLifecycle::AcceptedByBuyer {
-            return err!(MarketplaceError::RequestNotAccepted);
+        if request.lifecycle != RequestLifecycle::Paid {
+            return err!(MarketplaceError::RequestNotPaid);
         }
 
         if request.updated_at + TIME_TO_LOCK  > Clock::get().unwrap().unix_timestamp as u64 {
@@ -254,6 +251,18 @@ pub mod marketplace {
         request.updated_at = Clock::get().unwrap().unix_timestamp as u64;
     
         Ok(())
+    }
+
+    pub fn check_price(ctx: Context<CheckPrice>) -> Result<()>{
+        let price_feed = &ctx.accounts.price_feed;
+        let price_feed = load_price_feed_from_account_info(&price_feed).unwrap();
+                let current_timestamp = Clock::get()?.unix_timestamp;
+                let current_price = price_feed
+                .get_price_no_older_than(current_timestamp, STALENESS_THRESHOLD)
+                .unwrap();
+        
+        let sol_price_in_usd = current_price.price as u64;
+         Ok(())
     }
 
     pub fn pay_for_request_token(ctx: Context<PayForRequestToken>,coin: CoinPayment) -> Result<()> {
@@ -297,20 +306,22 @@ pub mod marketplace {
         match coin {
             CoinPayment::Pyusdt => {
                 // convert sol to usdc
-                let price_feed = load_price_feed_from_account_info(&price_feed).unwrap();
-                let current_timestamp = Clock::get()?.unix_timestamp;
-                let current_price = price_feed
-                .get_price_no_older_than(current_timestamp, STALENESS_THRESHOLD)
-                .unwrap();
+                // let price_feed = load_price_feed_from_account_info(&price_feed).unwrap();
+                // let current_timestamp = Clock::get()?.unix_timestamp;
+                // let current_price = price_feed
+                // .get_price_no_older_than(current_timestamp, STALENESS_THRESHOLD)
+                // .unwrap();
         
-                let sol_price_in_usd = current_price.price as u64;
-                let sol_price_for_offer = offer.price;
+                // let sol_price_in_usd = current_price.price as u64;
+                // let sol_price_for_offer = offer.price;
         
-                let sol_amount_in_usd = sol_price_for_offer * sol_price_in_usd;
+                // let sol_amount_in_usd = sol_price_for_offer * sol_price_in_usd;
 
-                let divisor: u64 = 10u64.pow((SOL_DECIMALS - current_price.expo.abs() - PYUSD_DECIMALS) as u32);
+                // let divisor: u64 = 10u64.pow((SOL_DECIMALS - current_price.expo.abs() - PYUSD_DECIMALS) as u32);
 
-                let pyusd_amount = sol_amount_in_usd / divisor;
+                // let pyusd_amount = sol_amount_in_usd / divisor;
+
+                let pyusd_amount = 1000000; //TODO: use price feed to get the price of pyusd
 
                 let accounts = TransferChecked {
                     from: from_ata.to_account_info(),
@@ -742,6 +753,18 @@ pub struct PayForRequestToken<'info> {
     pub token_program: Interface<'info, TokenInterface>,
 
     pub mint: InterfaceAccount<'info, Mint>,
+}
+
+#[derive(Accounts)]
+pub struct CheckPrice<'info> {
+    #[account(mut)]
+    pub authority: Signer<'info>,
+    
+    pub system_program: Program<'info, System>,
+
+    /// CHECK: this is the price feed
+    #[account(address = PYTH_USDC_FEED)]
+    pub price_feed: AccountInfo<'info>,
 }
 
 #[derive(Accounts)]

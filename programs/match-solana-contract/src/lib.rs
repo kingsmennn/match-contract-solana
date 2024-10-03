@@ -34,12 +34,14 @@ pub mod marketplace {
         let store_counter = &mut ctx.accounts.store_counter;
         let request_counter = &mut ctx.accounts.request_counter;
         let offer_counter = &mut ctx.accounts.offer_counter;
+        let request_payment_counter = &mut ctx.accounts.request_payment_counter;
     
         // Initialize counters to one
         user_counter.current = 1;
         store_counter.current = 1;
         request_counter.current = 1;
         offer_counter.current = 1;
+        request_payment_counter.current = 1;
     
         msg!("Counters initialized: Users, Stores, Requests, Offers");
         
@@ -708,6 +710,18 @@ pub struct PayForRequest<'info> {
         mut,
     )]
     pub offer: Box<Account<'info, Offer>>,
+
+    #[account(init, payer = authority ,space = 8 + size_of::<RequestPaymentTransaction>() + 1024,   
+    seeds = [REQUEST_PAYMENT_TAG, authority.key().as_ref(),&request_payment_counter.current.to_le_bytes()],
+    bump,)]
+    pub request_payment_info: Box<Account<'info, RequestPaymentTransaction>>,
+
+    #[account(
+        mut,
+        seeds = [REQUEST_PAYMENT_COUNTER],
+        bump,
+    )]
+    pub request_payment_counter: Box<Account<'info, Counter>>,
     
     #[account(mut)]
     pub authority: Signer<'info>,
@@ -729,6 +743,18 @@ pub struct PayForRequestToken<'info> {
         bump,
     )]
     pub request: Box<Account<'info, Request>>,
+
+    #[account(init, payer = authority ,space = 8 + size_of::<RequestPaymentTransaction>() + 1024,   
+    seeds = [REQUEST_PAYMENT_TAG, authority.key().as_ref(),&request_payment_counter.current.to_le_bytes()],
+    bump,)]
+    pub request_payment_info: Box<Account<'info, RequestPaymentTransaction>>,
+
+    #[account(
+        mut,
+        seeds = [REQUEST_PAYMENT_COUNTER],
+        bump,
+    )]
+    pub request_payment_counter: Box<Account<'info, Counter>>,
 
     #[account(
         mut,
@@ -850,6 +876,15 @@ pub struct InitializeCounters<'info> {
         space = 8 + size_of::<Counter>()
     )]
     pub offer_counter: Box<Account<'info, Counter>>,
+
+    #[account(
+        init,
+        seeds = [REQUEST_PAYMENT_COUNTER],
+        bump,
+        payer = authority,
+        space = 8 + size_of::<Counter>()
+    )]
+    pub request_payment_counter: Box<Account<'info, Counter>>,
 
     #[account(mut)]
     pub authority: Signer<'info>,

@@ -58,6 +58,20 @@ pub struct Offer {
 }
 
 #[account]
+pub struct RequestPaymentTransaction {
+    pub authority: Pubkey,
+    pub request_id: u64,
+    pub buyer_id: u64,
+    pub price: u64,
+    pub seller_id: u64,
+    pub created_at: u64,
+    pub updated_at: u64,
+    pub token: CoinPayment,
+    pub amount: u64,
+    pub id: u64,
+}
+
+#[account]
 pub struct Counter {
     pub current: u64,
 }

@@ -5,7 +5,15 @@ pub mod errors;
 use anchor_lang::prelude::*;
 use solana_program::system_instruction;
 // use pyth_solana_receiver_sdk::price_update::{get_feed_id_from_hex, PriceUpdateV2};
-use anchor_spl::token::{self, Token, TokenAccount, Transfer as SplTransfer};
+// use anchor_spl::token::{self, Token, TokenAccount, Transfer as SplTransfer};
+use anchor_spl::{
+    token_interface::{
+        TokenAccount, Mint, MintTo, mint_to,
+        CloseAccount, close_account,
+        TokenInterface, TransferChecked, transfer_checked
+    },
+    associated_token::AssociatedToken
+};
 use pyth_sdk_solana::load_price_feed_from_account_info;
 declare_id!("D3ZPj1Q9qAAod3kswZMuRtBsQJRkV37CwjSdCWvg7VmN");
 use crate::{constants::*, events::*, states::*, errors::*};
@@ -248,38 +256,14 @@ pub mod marketplace {
         Ok(())
     }
 
-    pub fn check_usd_conversion(ctx: Context<CheckUSDConversion>) -> Result<()> {
-        let price_feed = &ctx.accounts.price_feed;
-
-        let price_feed = load_price_feed_from_account_info(&price_feed).unwrap();
-        let current_timestamp = Clock::get()?.unix_timestamp;
-        let current_price = price_feed
-        .get_price_no_older_than(current_timestamp, STALENESS_THRESHOLD);
-
-    match current_price {
-        Some(price) => {
-            msg!("Price: {:?}", price.price);
-        },
-        None => {
-            msg!("Price not found");
-        }
-    };
-
-        // let price = price_update.get_price_no_older_than(
-        //     &Clock::get()?,
-        //     MAXIMUM_AGE,
-        //     &get_feed_id_from_hex(SOL_USD_PRICE_FEED)?,
-        // )?;
-        
-        // msg!("Price: {:?}", current_price.price);
-        Ok(())
-    }
-
     pub fn pay_for_request_token(ctx: Context<PayForRequestToken>,coin: CoinPayment) -> Result<()> {
         let request = &mut ctx.accounts.request;
         let offer = &mut ctx.accounts.offer;
         let authority = &ctx.accounts.authority;
         let price_feed = &ctx.accounts.price_feed;
+        let mint = &ctx.accounts.mint;
+
+        
     
         if request.authority != authority.key() {
             return err!(MarketplaceError::InvalidUser);
@@ -327,18 +311,19 @@ pub mod marketplace {
 
                 let pyusd_amount = sol_amount_in_usd / divisor;
 
-                let cpi_accounts = SplTransfer {
-                    from: ctx.accounts.from_ata.to_account_info().clone(),
-                    to: ctx.accounts.to_ata.to_account_info().clone(),
-                    authority: authority.to_account_info().clone(),
+                let accounts = TransferChecked {
+                    from: ctx.accounts.from_ata.to_account_info(),
+                    to: ctx.accounts.to_ata.to_account_info(),
+                    authority: authority.to_account_info(),
+                    mint: mint.to_account_info(),
                 };
+                
+                let ctx = CpiContext::new(
+                    ctx.accounts.token_program.to_account_info(),
+                    accounts
+                );
 
-                let cpi_program = ctx.accounts.token_program.to_account_info();
-
-                token::transfer(
-                    CpiContext::new(cpi_program, cpi_accounts),
-                    pyusd_amount,
-                )?;
+                transfer_checked(ctx, pyusd_amount, mint.decimals)?;
             },
             _ => {
                 return err!(MarketplaceError::InvalidCoinPayment);
@@ -722,15 +707,6 @@ pub struct PayForRequest<'info> {
     pub system_program: Program<'info, System>,
 }
 
-#[derive(Accounts)]
-pub struct CheckUSDConversion<'info> {
-    #[account(address = PYTH_USDC_FEED)]
-    pub price_feed: AccountInfo<'info>,
-
-    pub token_program: Program<'info, Token>,
-    
-    pub system_program: Program<'info, System>,
-}
 
 #[derive(Accounts)]
 pub struct PayForRequestToken<'info> {
@@ -753,16 +729,18 @@ pub struct PayForRequestToken<'info> {
     pub system_program: Program<'info, System>,
 
     #[account(mut)]
-    pub from_ata: Account<'info, TokenAccount>,
+    pub from_ata: InterfaceAccount<'info, TokenAccount>,
 
     /// CHECK: this is the price feed
     #[account(address = PYTH_USDC_FEED)]
     pub price_feed: AccountInfo<'info>,
 
     #[account(mut,address = PORTAL_PYUSD_TOKEN_ACCOUNT_PUBKEY)]
-    pub to_ata: Account<'info, TokenAccount>,
+    pub to_ata: InterfaceAccount<'info, TokenAccount>,
 
-    pub token_program: Program<'info, Token>,
+    pub token_program: Interface<'info, TokenInterface>,
+
+    pub mint: InterfaceAccount<'info, Mint>,
 }
 
 #[derive(Accounts)]

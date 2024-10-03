@@ -13,7 +13,7 @@ use solana_program::pubkey;
 use std::mem::size_of;
 
 const PORTAL_CLIENT_PUBKEY: Pubkey = pubkey!("BBb3WBLjQaBc7aT9pkzveEGsf8R3pm42mijrbrfYpM5w");
-const PORTAL_PYUSD_TOKEN_ACCOUNT_PUBKEY: Pubkey = pubkey!("C39mqNh22HxaHHvYuTpJmN7N9J6ftM7kCJjmAXd2ATHP");
+const PORTAL_PYUSD_TOKEN_ACCOUNT_PUBKEY: Pubkey = pubkey!("2uGj33NgCcukhYdN2RMNsjRqkK3EbZV3GpGaYZf6ouW1");
 const PYTH_USDC_FEED: Pubkey = pubkey!("EdVCmQ9FSPcVe5YySXDPCRmc8aDQLKJ9xvYBMZPie1Vw");
 const STALENESS_THRESHOLD: u64 = 60;
 pub const MAXIMUM_AGE: u64 = 60;

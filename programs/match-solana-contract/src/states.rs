@@ -79,7 +79,8 @@ pub enum RequestLifecycle {
     AcceptedBySeller = 1,
     AcceptedByBuyer = 2,
     RequestLocked = 3,
-    Completed = 4,
+    Paid = 4,
+    Completed = 5,
 }
 
 impl Default for RequestLifecycle {

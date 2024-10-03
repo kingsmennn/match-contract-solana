@@ -254,8 +254,16 @@ pub mod marketplace {
         let price_feed = load_price_feed_from_account_info(&price_feed).unwrap();
         let current_timestamp = Clock::get()?.unix_timestamp;
         let current_price = price_feed
-        .get_price_no_older_than(current_timestamp, STALENESS_THRESHOLD)
-        .unwrap();
+        .get_price_no_older_than(current_timestamp, STALENESS_THRESHOLD);
+
+    match current_price {
+        Some(price) => {
+            msg!("Price: {:?}", price.price);
+        },
+        None => {
+            msg!("Price not found");
+        }
+    };
 
         // let price = price_update.get_price_no_older_than(
         //     &Clock::get()?,
@@ -263,7 +271,7 @@ pub mod marketplace {
         //     &get_feed_id_from_hex(SOL_USD_PRICE_FEED)?,
         // )?;
         
-        msg!("Price: {:?}", current_price.price);
+        // msg!("Price: {:?}", current_price.price);
         Ok(())
     }
 

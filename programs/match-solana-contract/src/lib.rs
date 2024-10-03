@@ -307,6 +307,7 @@ pub mod marketplace {
         }
 
         request.paid = true;
+        request.lifecycle = RequestLifecycle::Paid;
 
         match coin {
             CoinPayment::PyUsdt => {
@@ -381,6 +382,7 @@ pub mod marketplace {
         }
 
         request.paid = true;
+        request.lifecycle = RequestLifecycle::Paid;
 
         match coin {
             CoinPayment::Solana => {

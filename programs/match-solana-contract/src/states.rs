@@ -92,7 +92,7 @@ impl Default for RequestLifecycle {
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, PartialEq)]
 pub enum CoinPayment {
     Solana,
-    PyUsdt
+    Pyusdt,
 }
 
 impl Default for CoinPayment {

@@ -295,7 +295,7 @@ pub mod marketplace {
         request.lifecycle = RequestLifecycle::Paid;
 
         match coin {
-            CoinPayment::PyUsdt => {
+            CoinPayment::Pyusdt => {
                 // convert sol to usdc
                 let price_feed = load_price_feed_from_account_info(&price_feed).unwrap();
                 let current_timestamp = Clock::get()?.unix_timestamp;

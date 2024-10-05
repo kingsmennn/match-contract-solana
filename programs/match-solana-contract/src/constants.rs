@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 
 #[constant]
-pub const TIME_TO_LOCK: u64 = 900;
+pub const TIME_TO_LOCK: u64 = 60;
 
 #[constant]
 pub const USER_TAG: &[u8] = b"USER_STATE";

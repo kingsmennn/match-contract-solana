@@ -10,17 +10,17 @@ use anchor_spl::
         TokenInterface, TransferChecked, transfer_checked
     }
 ;
+use pyth_solana_receiver_sdk::price_update::{get_feed_id_from_hex, PriceUpdateV2};
 use solana_program::pubkey::Pubkey;
-use pyth_sdk_solana::load_price_feed_from_account_info;
-declare_id!("AQsGgUYaW8Bw8QqfqSeZRrPR6Zc6RAiwk5CCBjVYLQb2");
+// use pyth_sdk_solana::load_price_feed_from_account_info;
+declare_id!("CkU5S1hDRMgx4u1E1AYYJoXM9F8P7jqti3tW7Uo1wipN");
 use crate::{constants::*, events::*, states::*, errors::*};
 use solana_program::pubkey;
 use std::mem::size_of;
 
 const PORTAL_CLIENT_PUBKEY: Pubkey = pubkey!("BBb3WBLjQaBc7aT9pkzveEGsf8R3pm42mijrbrfYpM5w");
 const PORTAL_PYUSD_TOKEN_ACCOUNT_PUBKEY: Pubkey = pubkey!("2uGj33NgCcukhYdN2RMNsjRqkK3EbZV3GpGaYZf6ouW1");
-const PYTH_USDC_FEED: Pubkey = pubkey!("J83w4HKfqxwcq3BEMMkPFSppX3gqekLyLJBexebFVkix");
-const STALENESS_THRESHOLD: u64 = 60;
+const PYTH_USDC_FEED: Pubkey = pubkey!("7UVimffxr9ow1uXYxsr4LHAcV58mLzhmwaeKvJ1pjLiE");
 pub const MAXIMUM_AGE: u64 = 60;
 const SOL_DECIMALS: i32 = 9;
 const PYUSD_DECIMALS:i32 = 6;
@@ -34,20 +34,27 @@ pub mod marketplace {
         let store_counter = &mut ctx.accounts.store_counter;
         let request_counter = &mut ctx.accounts.request_counter;
         let offer_counter = &mut ctx.accounts.offer_counter;
-        let request_payment_counter = &mut ctx.accounts.request_payment_counter;
     
         // Initialize counters to one
         user_counter.current = 1;
         store_counter.current = 1;
         request_counter.current = 1;
         offer_counter.current = 1;
-        request_payment_counter.current = 1;
     
-        msg!("Counters initialized: Users, Stores, Requests, Offers, RequestPayments");
+        msg!("Counters initialized: Users, Stores, Requests, Offers");
         
         Ok(())
     }
+    pub fn initialize_counters_pay(ctx: Context<InitializePaymentIncrement>) -> Result<()> {
+        let request_payment_counter = &mut ctx.accounts.request_payment_counter;
+
+        // Initialize counters to one
+        request_payment_counter.current = 1;
     
+        msg!("Counters initialized: PaymentIncrement");
+        
+        Ok(())
+    }
 
     pub fn create_user(
         ctx: Context<CreateUser>,
@@ -255,15 +262,15 @@ pub mod marketplace {
         Ok(())
     }
 
-    pub fn check_price(ctx: Context<CheckPrice>) -> Result<()>{
-        let price_feed = &ctx.accounts.price_feed;
-        let price_feed = load_price_feed_from_account_info(&price_feed).unwrap();
-                let current_timestamp = Clock::get()?.unix_timestamp;
-                let current_price = price_feed
-                .get_price_no_older_than(current_timestamp, STALENESS_THRESHOLD)
-                .unwrap();
+    pub fn check_price(_: Context<CheckPrice>) -> Result<()>{
+        // let price_feed = &ctx.accounts.price_feed;
+        // let price_feed = load_price_feed_from_account_info(&price_feed).unwrap();
+        //         let current_timestamp = Clock::get()?.unix_timestamp;
+        //         let current_price = price_feed
+        //         .get_price_no_older_than(current_timestamp, STALENESS_THRESHOLD)
+        //         .unwrap();
         
-        let sol_price_in_usd = current_price.price as u64;
+        // let sol_price_in_usd = current_price.price as u64;
          Ok(())
     }
 
@@ -271,7 +278,7 @@ pub mod marketplace {
         let request = &mut ctx.accounts.request;
         let offer = &mut ctx.accounts.offer;
         let authority = &ctx.accounts.authority;
-        let price_feed = &ctx.accounts.price_feed;
+        // let price_feed = &ctx.accounts.price_feed;
         let mint = &ctx.accounts.mint;
         let from_ata = &ctx.accounts.from_ata;
         let to_ata = &ctx.accounts.to_ata;
@@ -326,17 +333,22 @@ pub mod marketplace {
                 // let current_price = price_feed
                 // .get_price_no_older_than(current_timestamp, STALENESS_THRESHOLD)
                 // .unwrap();
+
+                let price_update = &mut ctx.accounts.price_update;
+                let current_price = price_update.get_price_no_older_than(
+                    &Clock::get()?,
+                    MAXIMUM_AGE,
+                    &get_feed_id_from_hex(SOL_USD_PRICE_FEED)?,
+                )?;
         
-                // let sol_price_in_usd = current_price.price as u64;
-                // let sol_price_for_offer = offer.price;
+                let sol_price_in_usd = current_price.price as u64;
+                let sol_price_for_offer = offer.price;
         
-                // let sol_amount_in_usd = sol_price_for_offer * sol_price_in_usd;
+                let sol_amount_in_usd = sol_price_for_offer * sol_price_in_usd;
 
-                // let divisor: u64 = 10u64.pow((SOL_DECIMALS - current_price.expo.abs() - PYUSD_DECIMALS) as u32);
+                let divisor: u64 = 10u64.pow((SOL_DECIMALS - current_price.exponent.abs() - PYUSD_DECIMALS) as u32);
 
-                // let pyusd_amount = sol_amount_in_usd / divisor;
-
-                let pyusd_amount = 1000000; //TODO: use price feed to get the price of pyusd
+                let pyusd_amount = sol_amount_in_usd / divisor;
 
                 request_payment_info.amount = pyusd_amount;
 
@@ -798,14 +810,19 @@ pub struct PayForRequestToken<'info> {
     #[account(mut)]
     pub from_ata: InterfaceAccount<'info, TokenAccount>,
 
-    /// CHECK: this is the price feed
-    #[account(address = PYTH_USDC_FEED)]
-    pub price_feed: AccountInfo<'info>,
+    // // /// CHECK: this is the price feed
+    // #[account(address = PYTH_USDC_FEED)]
+    // pub price_feed: AccountInfo<'info>,
 
     #[account(mut,address = PORTAL_PYUSD_TOKEN_ACCOUNT_PUBKEY)]
     pub to_ata: InterfaceAccount<'info, TokenAccount>,
 
     pub token_program: Interface<'info, TokenInterface>,
+
+    /// CHECK: this is the price feed
+    #[account(address = PYTH_USDC_FEED)]
+    pub price_update: Account<'info, PriceUpdateV2>,
+
 
     pub mint: InterfaceAccount<'info, Mint>,
 }
@@ -869,6 +886,21 @@ pub struct AcceptOffer<'info> {
 }
 
 #[derive(Accounts)]
+pub struct InitializePaymentIncrement<'info> {
+    #[account(
+        init,
+        seeds = [REQUEST_PAYMENT_COUNTER],
+        bump,
+        payer = authority,
+        space = 8 + size_of::<Counter>()
+    )]
+    pub request_payment_counter: Box<Account<'info, Counter>>,
+
+    #[account(mut)]
+    pub authority: Signer<'info>,
+    pub system_program: Program<'info, System>,
+}
+#[derive(Accounts)]
 pub struct InitializeCounters<'info> {
     #[account(
         init,
@@ -905,15 +937,6 @@ pub struct InitializeCounters<'info> {
         space = 8 + size_of::<Counter>()
     )]
     pub offer_counter: Box<Account<'info, Counter>>,
-
-    #[account(
-        init,
-        seeds = [REQUEST_PAYMENT_COUNTER],
-        bump,
-        payer = authority,
-        space = 8 + size_of::<Counter>()
-    )]
-    pub request_payment_counter: Box<Account<'info, Counter>>,
 
     #[account(mut)]
     pub authority: Signer<'info>,

@@ -13,7 +13,7 @@ use anchor_spl::
 use pyth_solana_receiver_sdk::price_update::{get_feed_id_from_hex, PriceUpdateV2};
 use solana_program::pubkey::Pubkey;
 // use pyth_sdk_solana::load_price_feed_from_account_info;
-declare_id!("CkU5S1hDRMgx4u1E1AYYJoXM9F8P7jqti3tW7Uo1wipN");
+declare_id!("gSh52u5Nt39rb8CSHQhUhF1cSdFsL9JebSoPZmazFrZ");
 use crate::{constants::*, events::*, states::*, errors::*};
 use solana_program::pubkey;
 use std::mem::size_of;
@@ -262,18 +262,6 @@ pub mod marketplace {
         Ok(())
     }
 
-    pub fn check_price(_: Context<CheckPrice>) -> Result<()>{
-        // let price_feed = &ctx.accounts.price_feed;
-        // let price_feed = load_price_feed_from_account_info(&price_feed).unwrap();
-        //         let current_timestamp = Clock::get()?.unix_timestamp;
-        //         let current_price = price_feed
-        //         .get_price_no_older_than(current_timestamp, STALENESS_THRESHOLD)
-        //         .unwrap();
-        
-        // let sol_price_in_usd = current_price.price as u64;
-         Ok(())
-    }
-
     pub fn pay_for_request_token(ctx: Context<PayForRequestToken>,coin: CoinPayment) -> Result<()> {
         let request = &mut ctx.accounts.request;
         let offer = &mut ctx.accounts.offer;
@@ -322,18 +310,14 @@ pub mod marketplace {
         request_payment_info.updated_at = Clock::get().unwrap().unix_timestamp as u64;
         request_payment_info.token = coin.clone();
         request_payment_info.id = request_payment_counter.current;
+        request_payment_info.seller_authority = offer.authority;
         request_payment_counter.current = request_payment_counter.current.checked_add(1).unwrap();
+        
 
 
         match coin {
             CoinPayment::Pyusdt => {
                 // convert sol to usdc
-                // let price_feed = load_price_feed_from_account_info(&price_feed).unwrap();
-                // let current_timestamp = Clock::get()?.unix_timestamp;
-                // let current_price = price_feed
-                // .get_price_no_older_than(current_timestamp, STALENESS_THRESHOLD)
-                // .unwrap();
-
                 let price_update = &mut ctx.accounts.price_update;
                 let current_price = price_update.get_price_no_older_than(
                     &Clock::get()?,
@@ -346,9 +330,10 @@ pub mod marketplace {
         
                 let sol_amount_in_usd = sol_price_for_offer * sol_price_in_usd;
 
-                let divisor: u64 = 10u64.pow((SOL_DECIMALS - current_price.exponent.abs() - PYUSD_DECIMALS) as u32);
+                // let divisor: u64 = 10u64.pow((SOL_DECIMALS - current_price.exponent.abs() - PYUSD_DECIMALS) as u32);
 
-                let pyusd_amount = sol_amount_in_usd / divisor;
+                // let pyusd_amount = 1000000;
+                let pyusd_amount = sol_amount_in_usd / 100000000000;
 
                 request_payment_info.amount = pyusd_amount;
 
@@ -415,6 +400,7 @@ pub mod marketplace {
         request_payment_info.request_id = request.id;
         request_payment_info.buyer_id = request.buyer_id;
         request_payment_info.price = offer.price;
+        request_payment_info.seller_authority = offer.authority;
         request_payment_info.seller_id = offer.seller_id;
         request_payment_info.created_at = Clock::get().unwrap().unix_timestamp as u64;
         request_payment_info.updated_at = Clock::get().unwrap().unix_timestamp as u64;
@@ -825,18 +811,6 @@ pub struct PayForRequestToken<'info> {
 
 
     pub mint: InterfaceAccount<'info, Mint>,
-}
-
-#[derive(Accounts)]
-pub struct CheckPrice<'info> {
-    #[account(mut)]
-    pub authority: Signer<'info>,
-    
-    pub system_program: Program<'info, System>,
-
-    /// CHECK: this is the price feed
-    #[account(address = PYTH_USDC_FEED)]
-    pub price_feed: AccountInfo<'info>,
 }
 
 #[derive(Accounts)]

@@ -64,6 +64,7 @@ pub struct RequestPaymentTransaction {
     pub buyer_id: u64,
     pub price: u64,
     pub seller_id: u64,
+    pub seller_authority: Pubkey,
     pub created_at: u64,
     pub updated_at: u64,
     pub token: CoinPayment,

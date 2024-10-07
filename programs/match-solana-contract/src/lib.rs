@@ -18,12 +18,10 @@ use crate::{constants::*, events::*, states::*, errors::*};
 use solana_program::pubkey;
 use std::mem::size_of;
 
-const PORTAL_CLIENT_PUBKEY: Pubkey = pubkey!("BBb3WBLjQaBc7aT9pkzveEGsf8R3pm42mijrbrfYpM5w");
-const PORTAL_PYUSD_TOKEN_ACCOUNT_PUBKEY: Pubkey = pubkey!("2uGj33NgCcukhYdN2RMNsjRqkK3EbZV3GpGaYZf6ouW1");
+const PORTAL_CLIENT_PUBKEY: Pubkey = pubkey!("GDCRomxxHbEmBXcWL2WACAqzJ46jMzM8kCsWBhg2Kmjt");
+const PORTAL_PYUSD_TOKEN_ACCOUNT_PUBKEY: Pubkey = pubkey!("GxaRbc7Y7MTuti8uQAU1GAJpi8DUh5jQAHrVuG9mXJJV");
 const PYTH_USDC_FEED: Pubkey = pubkey!("7UVimffxr9ow1uXYxsr4LHAcV58mLzhmwaeKvJ1pjLiE");
 pub const MAXIMUM_AGE: u64 = 60;
-const SOL_DECIMALS: i32 = 9;
-const PYUSD_DECIMALS:i32 = 6;
 const SOL_USD_PRICE_FEED:&str = "0xef0d8b6fda2ceba41da15d4095d1da392a0d2f8ed0c6c7bc0f4cfac8c280b56d";
 #[program]
 pub mod marketplace {
@@ -329,10 +327,7 @@ pub mod marketplace {
                 let sol_price_for_offer = offer.price;
         
                 let sol_amount_in_usd = sol_price_for_offer * sol_price_in_usd;
-
-                // let divisor: u64 = 10u64.pow((SOL_DECIMALS - current_price.exponent.abs() - PYUSD_DECIMALS) as u32);
-
-                // let pyusd_amount = 1000000;
+                
                 let pyusd_amount = sol_amount_in_usd / 100000000000;
 
                 request_payment_info.amount = pyusd_amount;
@@ -795,10 +790,6 @@ pub struct PayForRequestToken<'info> {
 
     #[account(mut)]
     pub from_ata: InterfaceAccount<'info, TokenAccount>,
-
-    // // /// CHECK: this is the price feed
-    // #[account(address = PYTH_USDC_FEED)]
-    // pub price_feed: AccountInfo<'info>,
 
     #[account(mut,address = PORTAL_PYUSD_TOKEN_ACCOUNT_PUBKEY)]
     pub to_ata: InterfaceAccount<'info, TokenAccount>,

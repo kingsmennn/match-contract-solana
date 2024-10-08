@@ -12,7 +12,6 @@ use anchor_spl::
 ;
 use pyth_solana_receiver_sdk::price_update::{get_feed_id_from_hex, PriceUpdateV2};
 use solana_program::pubkey::Pubkey;
-// use pyth_sdk_solana::load_price_feed_from_account_info;
 declare_id!("gSh52u5Nt39rb8CSHQhUhF1cSdFsL9JebSoPZmazFrZ");
 use crate::{constants::*, events::*, states::*, errors::*};
 use solana_program::pubkey;
@@ -33,7 +32,6 @@ pub mod marketplace {
         let request_counter = &mut ctx.accounts.request_counter;
         let offer_counter = &mut ctx.accounts.offer_counter;
     
-        // Initialize counters to one
         user_counter.current = 1;
         store_counter.current = 1;
         request_counter.current = 1;
@@ -46,7 +44,6 @@ pub mod marketplace {
     pub fn initialize_counters_pay(ctx: Context<InitializePaymentIncrement>) -> Result<()> {
         let request_payment_counter = &mut ctx.accounts.request_payment_counter;
 
-        // Initialize counters to one
         request_payment_counter.current = 1;
     
         msg!("Counters initialized: PaymentIncrement");
@@ -264,7 +261,6 @@ pub mod marketplace {
         let request = &mut ctx.accounts.request;
         let offer = &mut ctx.accounts.offer;
         let authority = &ctx.accounts.authority;
-        // let price_feed = &ctx.accounts.price_feed;
         let mint = &ctx.accounts.mint;
         let from_ata = &ctx.accounts.from_ata;
         let to_ata = &ctx.accounts.to_ata;
@@ -315,7 +311,6 @@ pub mod marketplace {
 
         match coin {
             CoinPayment::Pyusdt => {
-                // convert sol to usdc
                 let price_update = &mut ctx.accounts.price_update;
                 let current_price = price_update.get_price_no_older_than(
                     &Clock::get()?,
